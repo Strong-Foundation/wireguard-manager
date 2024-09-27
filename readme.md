@@ -388,7 +388,7 @@ For a comprehensive debugging process, you might want to clone the repository to
 1. **Clone the Repository**: Use the Git command to clone the repository to your preferred directory, such as `/root/` in this example. This step copies all the code from the online repository to your local machine.
 
 ```bash
-git clone https://github.com/complexorganizations/wireguard-manager /root/
+git clone https://github.com/complexorganizations/wireguard-manager /root/wireguard-manager
 ```
 
 2. **Start Debugging**: After cloning, navigate to the script's directory and initiate the debugging process. The script will be executed in debug mode, providing detailed output of each step. This output is redirected to a log file for easier examination. The log file, located in the same directory, stores all the debugging information, making it easy to trace any issues or understand the script's behavior.
