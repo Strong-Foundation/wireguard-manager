@@ -26,4 +26,7 @@ jobs:
         uses: actions/checkout@v4 # Use v2 of checkout action for better compatibility and features
       # Run shellcheck on the shell scripts
       - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@v2.0.0 # Use a specific version instead of master
+        uses: ludeeus/action-shellcheck@master # Use the master version.
+        with:
+          # Specify any additional arguments or options for ShellCheck (optional)
+          args: "--check-sourced --enable=all"  # Example args: check sourced files, enable all checks
