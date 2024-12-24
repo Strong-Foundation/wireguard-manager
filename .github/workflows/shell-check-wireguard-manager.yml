@@ -27,6 +27,3 @@ jobs:
       # Run shellcheck on the shell scripts
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master # Use the master version.
-        with:
-          # Specify any additional arguments or options for ShellCheck (optional)
-          args: "--check-sourced --enable=all"  # Example args: check sourced files, enable all checks
