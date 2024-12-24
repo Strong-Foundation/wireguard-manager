@@ -1,67 +1,72 @@
 # Name of the workflow
-name: Deploy files to github pages
+name: Deploy files to GitHub Pages
 
 # Define the events that trigger the workflow
 on:
   # Trigger the workflow on push events
   push:
-    # Only for the main branch
+    # Specify branches that trigger the workflow (only "main" branch here)
     branches:
       - "main"
-    # Only for specific paths
+    # Specify paths that trigger the workflow when modified
     paths:
       - "assets/hosts"
       - "assets/named.cache"
       - "wireguard-manager.sh"
-  # Allow manual triggering of the workflow
+  # Allow manual triggering of the workflow via the GitHub Actions interface
   workflow_dispatch:
 
-# Define the permissions for the workflow
+# Define permissions for the workflow
 permissions:
-  # Read access to the repository content
+  # Grant read access to repository contents
   contents: read
-  # Write access to GitHub Pages
+  # Grant write access to GitHub Pages for deployment
   pages: write
-  # Write access to GitHub ID Tokens
+  # Grant write access to GitHub ID tokens (used for authentication)
   id-token: write
 
-# Define the concurrency settings for the workflow
+# Define concurrency settings to manage workflow runs
 concurrency:
-  # Group name for the concurrency
+  # Group name for managing concurrency of workflow runs
   group: "pages"
-  # Cancel any in-progress job runs when a new job run is triggered
+  # Automatically cancel in-progress runs of this workflow group when a new one starts
   cancel-in-progress: true
 
 # Define the jobs in the workflow
 jobs:
-  # Define a job named "deploy"
+  # Job to handle deployment
   deploy:
-    # Define the environment for the job
+    # Define environment-related settings for this job
     environment:
-      # Name of the environment
+      # Name of the environment (used for deployment tracking)
       name: github-pages
-      # URL of the environment
+      # Dynamic URL of the GitHub Pages environment, retrieved from deployment step output
       url: ${{ steps.deployment.outputs.page_url }}
-    # The type of runner that the job will run on
+    # Specify the type of runner to execute this job (Ubuntu-based runner)
     runs-on: ubuntu-latest
-    # Define the steps in the job
+    # Define the steps to execute within this job
     steps:
-      # Check out the repository code
+      # Step 1: Check out the repository code
       - name: Checkout
         uses: actions/checkout@v4
-      # Setup GitHub Pages
+
+      # Step 2: Set up GitHub Pages for deployment
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      # Upload the repository content as an artifact
+
+      # Step 3: Upload specified files from the repository as an artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
+          # Name of the artifact
           name: github-pages
+          # Paths to include in the artifact
           path: |
             assets/hosts
             assets/named.cache
             wireguard-manager.sh
-      # Deploy the artifact to GitHub Pages
+
+      # Step 4: Deploy the uploaded artifact to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

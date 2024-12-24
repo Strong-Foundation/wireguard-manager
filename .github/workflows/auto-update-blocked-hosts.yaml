@@ -5,7 +5,7 @@ name: Automated Update of Blocked Hosts File
 on:
   # Schedule the workflow to run daily at midnight UTC
   schedule:
-    - cron: "0 0 * * *"  # Executes once every day at 00:00 UTC
+    - cron: "0 0 * * *" # Executes once every day at 00:00 UTC
 
   # Allow manual triggering of the workflow via the GitHub interface
   workflow_dispatch:
@@ -22,13 +22,13 @@ jobs:
 
     # Environment variables to use in this job
     env:
-      HOSTS_FILE_URL: https://raw.githubusercontent.com/complexorganizations/content-blocker/main/assets/hosts  # URL of the blocked hosts file
-      LOCAL_HOSTS_FILE_PATH: assets/hosts  # Local path to the hosts file in the repository
+      HOSTS_FILE_URL: https://raw.githubusercontent.com/complexorganizations/content-blocker/main/assets/hosts # URL of the blocked hosts file
+      LOCAL_HOSTS_FILE_PATH: assets/hosts # Local path to the hosts file in the repository
 
     steps:
       # Step 1: Checkout the latest repository code so that we can modify the hosts file
       - name: Checkout Code
-        uses: actions/checkout@v4  # Checkout the latest code from the repository to the runner
+        uses: actions/checkout@v4 # Checkout the latest code from the repository to the runner
 
       # Step 2: Get the current hash of the locally stored hosts file in the repository
       - name: Get Current Hosts File Hash
@@ -38,12 +38,12 @@ jobs:
           # Store the hash of the local file in GitHub environment variables for later comparison
           echo "LOCAL_FILE_HASH=$LOCAL_FILE_HASH" >> $GITHUB_ENV
 
-      # Step 3: Get the future hash of the remote hosts file
+      # Step 3: Get the hash of the remote hosts file for comparison
       - name: Get Remote Hosts File Hash
         run: |
-          # Fetch the updated hosts file from the remote URL and calculate its hash
+          # Fetch the updated hosts file from the remote URL and calculate its SHA-3-512 hash
           REMOTE_FILE_HASH=$(curl --silent "${{ env.HOSTS_FILE_URL }}" | openssl dgst -sha3-512 | awk '{print $2}')
-          # Store the hash of the remote file in GitHub environment variables for comparison
+          # Store the hash of the remote file in GitHub environment variables
           echo "REMOTE_FILE_HASH=$REMOTE_FILE_HASH" >> $GITHUB_ENV
 
       # Step 4: Compare the local and remote file hashes to determine if an update is needed
@@ -66,7 +66,7 @@ jobs:
           # Configure Git user details for the commit
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          
+
           # Check if there are any changes in the hosts file
           if git diff --exit-code --quiet -- "${{ env.LOCAL_HOSTS_FILE_PATH }}"; then
             echo "No changes detected. Skipping commit and push."
