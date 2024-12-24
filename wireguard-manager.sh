@@ -165,27 +165,24 @@ kernel-check
 
 # The following function checks if the current init system is one of the allowed options.
 function check-current-init-system() {
-  # This function checks if the current init system is systemd or sysvinit.
-  # If it is neither, the script exits.
-  CURRENT_INIT_SYSTEM=$(ps --no-headers -o comm 1)
-  # This line retrieves the current init system by checking the process name of PID 1.
-  case ${CURRENT_INIT_SYSTEM} in
-  # The case statement checks if the retrieved init system is one of the allowed options.
-  *"systemd"* | *"init"* | *"bash"* | *"sh"*)
-    # If the init system is systemd or sysvinit (init), continue with the script.
-    ;;
-  *)
-    # If the init system is not one of the allowed options, display an error message and exit.
-    echo "Error: The ${CURRENT_INIT_SYSTEM} initialization system is currently not supported. Please stay tuned for future updates."
-    exit
-    ;;
-  esac
+  # Get the current init system by checking the process name of PID 1.
+  CURRENT_INIT_SYSTEM=$(ps -p 1 -o comm= | awk -F'/' '{print $NF}') # Extract only the command name without the full path.
+  # Convert to lowercase to make the comparison case-insensitive.
+  CURRENT_INIT_SYSTEM=$(echo "$CURRENT_INIT_SYSTEM" | tr '[:upper:]' '[:lower:]')
+  # Log the detected init system (optional for debugging purposes).
+  echo "Detected init system: ${CURRENT_INIT_SYSTEM}"
+  # Define a list of allowed init systems (case-insensitive).
+  ALLOWED_INIT_SYSTEMS=("systemd" "sysvinit" "init" "upstart" "bash" "sh")
+  # Check if the current init system is in the list of allowed init systems
+  if [[ ! "${ALLOWED_INIT_SYSTEMS[*]}" =~ ${CURRENT_INIT_SYSTEM} ]]; then
+    # If the init system is not allowed, display an error message and exit with an error code.
+    echo "Error: The '${CURRENT_INIT_SYSTEM}' initialization system is not supported. Please stay tuned for future updates."
+    exit 1 # Exit the script with an error code.
+  fi
 }
 
 # The check-current-init-system function is being called.
-
 check-current-init-system
-# Calls the check-current-init-system function.
 
 # The following function checks if there's enough disk space to proceed with the installation.
 function check-disk-space() {
@@ -829,12 +826,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         # Add a cron job to run the script with --update option every day at midnight
         echo "0 0 * * * ${CURRENT_FILE_PATH} --update"
       } | crontab -
-      # Check the init system in use
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
-        # If systemd is in use, enable and start the cron service
+      # Manage the service based on the init system
+      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
         systemctl enable --now ${SYSTEM_CRON_NAME}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
-        # If initd is in use, start the cron service
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service ${SYSTEM_CRON_NAME} start
       fi
       ;;
@@ -870,12 +865,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         # Add a cron job to run the script with --backup option every day at midnight
         echo "0 0 * * * ${CURRENT_FILE_PATH} --backup"
       } | crontab -
-      # Check the init system in use
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
-        # If systemd is in use, enable and start the cron service
+      # Manage the service based on the init system
+      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
         systemctl enable --now ${SYSTEM_CRON_NAME}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
-        # If initd is in use, start the cron service
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service ${SYSTEM_CRON_NAME} start
       fi
       ;;
@@ -1050,10 +1043,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     1)
       # If the user chose to expire the peer, set the expiration flag to true.
       AUTOMATIC_WIREGUARD_EXPIRATION=true
-      # Depending on the init system, enable and start the cron service.
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      # Manage the service based on the init system
+      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
         systemctl enable --now ${SYSTEM_CRON_NAME}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service ${SYSTEM_CRON_NAME} start
       fi
       ;;
@@ -1208,9 +1201,9 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
           apt-get install unbound unbound-host unbound-anchor -y
           # If the distribution is Ubuntu, disable systemd-resolved.
           if [ "${CURRENT_DISTRO}" == "ubuntu" ]; then
-            if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+            if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
               systemctl disable --now systemd-resolved
-            elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+            elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
               service systemd-resolved stop
             fi
           fi
@@ -1387,15 +1380,15 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${CLIENT_NAME}"-${WIRE
         echo "$(date +%M) $(date +%H) $(date +%d) $(date +%m) * echo -e \"${CLIENT_NAME}\" | ${CURRENT_FILE_PATH} --remove"
       } | crontab -
     fi
-    # Initiate and set the necessary services to run at startup, depending on the init system (either systemd or init)
-    if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+    # Manage the service based on the init system
+    if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
       systemctl enable --now nftables
       systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
       if [ "${INSTALL_UNBOUND}" == true ]; then
         systemctl enable --now unbound
         systemctl restart unbound
       fi
-    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+    elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
       service nftables start
       service wg-quick@${WIREGUARD_PUB_NIC} start
       if [ "${INSTALL_UNBOUND}" == true ]; then
@@ -1451,9 +1444,9 @@ else
     4) # Restart the WireGuard service
       # The script first identifies the init system (either "systemd" or "init")
       # Then, it restarts the WireGuard service based on the identified init system
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
         systemctl restart wg-quick@${WIREGUARD_PUB_NIC}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service wg-quick@${WIREGUARD_PUB_NIC} restart
       fi
       ;;
@@ -1663,10 +1656,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       ;;
     7) # Reinstall WireGuard
       # Check if the current init system is systemd, and if so, disable and stop the WireGuard service
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
         systemctl disable --now wg-quick@${WIREGUARD_PUB_NIC}
-      # Check if the current init system is init, and if so, stop the WireGuard service
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service wg-quick@${WIREGUARD_PUB_NIC} stop
       fi
       # Bring down the WireGuard interface
@@ -1687,18 +1679,17 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         yum reinstall wireguard-tools -y
       fi
       # Enable and start the WireGuard service based on the current init system
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
         systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service wg-quick@${WIREGUARD_PUB_NIC} restart
       fi
       ;;
     8) # Uninstall WireGuard and purging files
       # Check if the current init system is systemd and disable the WireGuard service
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
         systemctl disable --now wg-quick@${WIREGUARD_PUB_NIC}
-        # If the init system is not systemd, check if it is init and stop the WireGuard service
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service wg-quick@${WIREGUARD_PUB_NIC} stop
       fi
       # Bring down the WireGuard interface
@@ -1759,10 +1750,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       # Check if the 'unbound' command is available on the system
       if [ -x "$(command -v unbound)" ]; then
         # Check if the current init system is systemd and disable the Unbound service
-        if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+        if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
           systemctl disable --now unbound
-        # If the init system is not systemd, check if it is init and stop the Unbound service
-        elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+        elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
           service unbound stop
         fi
         # If a backup of the resolv.conf file exists, restore it and set the immutable flag
@@ -1780,9 +1770,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         elif { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
           # If the distribution is Ubuntu, restart systemd-resolved service based on the init system
           if [ "${CURRENT_DISTRO}" == "ubuntu" ]; then
-            if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+            if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
               systemctl enable --now systemd-resolved
-            elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+            elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
               service systemd-resolved restart
             fi
           fi
@@ -1844,12 +1834,10 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
           fi
         fi
         # Once everything is completed, restart the unbound service
-        if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+        if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
           systemctl restart unbound
-          echo "Restarting unbound service..."
-        elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+        elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
           service unbound restart
-          echo "Restarting unbound service..."
         fi
       fi
       ;;
@@ -1893,11 +1881,11 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       # Unzip the backup file, overwriting existing files, using the specified backup password, and extract the contents to the WireGuard path
       unzip -o -P "${WIREGUARD_BACKUP_PASSWORD}" "${WIREGUARD_CONFIG_BACKUP}" -d "${WIREGUARD_PATH}"
       # If the current init system is systemd, enable and start the wg-quick service
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      # Manage the service based on the init system
+      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
         systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
-      # If the current init system is init, restart the wg-quick service
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
-        service wg-quick@${WIREGUARD_PUB_NIC} restart
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
+        service wg-quick@${WIREGUARD_PUB_NIC} start
       fi
       ;;
     12) # Change the IP address of your wireguard interface.
