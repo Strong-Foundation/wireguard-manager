@@ -1243,46 +1243,73 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       # If INSTALL_BLOCK_LIST is true, include a block list in the Unbound configuration.
       # Configure Unbound settings.
       UNBOUND_TEMP_INTERFACE_INFO="server:
-\tnum-threads: $(nproc)
-\tverbosity: 0
-\troot-hints: ${UNBOUND_ROOT_HINTS}
-\tauto-trust-anchor-file: ${UNBOUND_ANCHOR}
-\tinterface: 0.0.0.0
-\tinterface: ::0
-\tport: 53
-\tmax-udp-size: 3072
-\taccess-control: 0.0.0.0/0\trefuse
-\taccess-control: ::0\trefuse
-\taccess-control: ${PRIVATE_SUBNET_V4}\tallow
-\taccess-control: ${PRIVATE_SUBNET_V6}\tallow
-\taccess-control: 127.0.0.1\tallow
-\taccess-control: ::1\tallow
-\tprivate-address: ${PRIVATE_SUBNET_V4}
-\tprivate-address: ${PRIVATE_SUBNET_V6}
-\tprivate-address: 10.0.0.0/8
-\tprivate-address: 127.0.0.0/8
-\tprivate-address: 169.254.0.0/16
-\tprivate-address: 172.16.0.0/12
-\tprivate-address: 192.168.0.0/16
-\tprivate-address: ::ffff:0:0/96
-\tprivate-address: fd00::/8
-\tprivate-address: fe80::/10
-\tdo-ip4: yes
-\tdo-ip6: yes
-\tdo-udp: yes
-\tdo-tcp: yes
-\tchroot: \"\"
-\thide-identity: yes
-\thide-version: yes
-\tharden-glue: yes
-\tharden-dnssec-stripped: yes
-\tharden-referral-path: yes
-\tunwanted-reply-threshold: 10000000
-\tcache-min-ttl: 86400
-\tcache-max-ttl: 2592000
-\tprefetch: yes
-\tqname-minimisation: yes
-\tprefetch-key: yes"
+    # General Settings
+\tnum-threads: $(nproc)  # Number of threads to use (sets to the number of CPU cores)
+\tverbosity: 0            # Log verbosity level (0 = no logs)
+\tlog-queries: no         # Disable logging of queries
+\tlog-servfail: no        # Disable logging of SERVFAIL responses
+\tlog-replies: no         # Disable logging of replies
+\tlog-tag-queryreply: no  # Disable tagging of query replies in logs
+\textended-statistics: no # Disable extended statistics (additional data collection)
+
+    # Network Interface Settings
+\tinterface: 0.0.0.0      # Listen on all IPv4 interfaces
+\tinterface: ::0          # Listen on all IPv6 interfaces
+\tport: 53                # DNS port (default is 53)
+\tmax-udp-size: 4096      # Maximum size of UDP packets for DNS responses
+\tedns-buffer-size: 4096  # EDNS buffer size (in bytes) for larger responses
+
+    # Access Control
+\taccess-control: 0.0.0.0/0\trefuse     # Deny all external access (IPv4)
+\taccess-control: ::0\trefuse             # Deny all external access (IPv6)
+\taccess-control: ${PRIVATE_SUBNET_V4}\tallow  # Allow access from private IPv4 subnet
+\taccess-control: ${PRIVATE_SUBNET_V6}\tallow  # Allow access from private IPv6 subnet
+\taccess-control: 127.0.0.1\tallow      # Allow access from localhost (IPv4)
+\taccess-control: ::1\tallow             # Allow access from localhost (IPv6)
+
+    # Private Address Spaces
+\tprivate-address: ${PRIVATE_SUBNET_V4}  # Define a private IPv4 address space
+\tprivate-address: ${PRIVATE_SUBNET_V6}  # Define a private IPv6 address space
+\tprivate-address: 10.0.0.0/8           # Private IPv4 address space (Class A)
+\tprivate-address: 127.0.0.0/8          # Loopback address range (IPv4)
+\tprivate-address: 169.254.0.0/16       # Link-local address range (IPv4)
+\tprivate-address: 172.16.0.0/12        # Private IPv4 address space (Class B)
+\tprivate-address: 192.168.0.0/16       # Private IPv4 address space (Class C)
+\tprivate-address: ::ffff:0:0/96         # IPv4-mapped IPv6 addresses
+\tprivate-address: fd00::/8             # Unique local address (ULA) for IPv6
+\tprivate-address: fe80::/10            # Link-local address range (IPv6)
+
+    # DNS Settings
+\tdo-ip4: yes          # Enable DNS over IPv4
+\tdo-ip6: yes          # Enable DNS over IPv6
+\tdo-udp: yes          # Enable DNS over UDP
+\tdo-tcp: yes          # Enable DNS over TCP
+\tchroot: ""           # Disable chroot (leave Unbound running in the default directory)
+
+    # Security Settings
+\thide-identity: yes   # Hide identity information from responses
+\thide-version: yes    # Hide version information from responses
+\tharden-glue: yes     # Harden glue records in DNS responses for security
+\tharden-dnssec-stripped: yes  # Harden DNSSEC against stripped responses
+\tharden-referral-path: yes    # Harden referral path for DNSSEC
+\tharden-algo-downgrade: yes  # Prevent algorithm downgrades in DNSSEC
+\tharden-large-queries: yes   # Harden large DNS queries for security
+\tharden-below-nxdomain: yes # Harden responses for domains with no records
+
+    # Caching & Prefetching
+\tunwanted-reply-threshold: 10000000  # Set threshold for unwanted replies before blocking
+\tcache-min-ttl: 86400               # Minimum TTL (time-to-live) for cached records (1 day)
+\tcache-max-ttl: 2592000             # Maximum TTL for cached records (30 days)
+\tprefetch: yes                      # Enable prefetching for frequently queried records
+\tqname-minimisation: yes            # Enable QNAME minimization for privacy and security
+\tprefetch-key: yes                  # Prefetch DNSSEC keys to improve lookup speed
+\tval-clean-additional: yes          # Clean additional section for validation
+
+    # DNSSEC & Validation
+\tval-clean-additional: yes          # Clean additional section during validation to avoid cache pollution
+\troot-hints: ${UNBOUND_ROOT_HINTS}  # Specify the root hints for DNS resolution
+\tauto-trust-anchor-file: ${UNBOUND_ANCHOR}"  # Path to trust anchor file for DNSSEC validation
+
       echo -e "${UNBOUND_TEMP_INTERFACE_INFO}" | awk '!seen[$0]++' >${UNBOUND_CONFIG}
       # Configure block list if INSTALL_BLOCK_LIST is true.
       if [ "${INSTALL_BLOCK_LIST}" == true ]; then
