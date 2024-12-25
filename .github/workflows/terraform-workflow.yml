@@ -27,7 +27,7 @@ jobs:
     # Name of the job
     name: Terraform Workflow # Define the job name
     # Specify the type of runner to use for the job
-    runs-on: ubuntu-latest # Use the latest Ubuntu runner for the job
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
 
     # Define the main.tf file as a variable for easier maintenance
     env:
@@ -44,13 +44,17 @@ jobs:
         with:
           terraform_version: latest # Use the latest version of Terraform
 
-      # Step to check and format Terraform code
-      - name: Terraform Format Check
-        run: terraform fmt -check -diff ${MAIN_TF_FILE} # Check if the Terraform files are properly formatted
+      # Step to initialize Terraform
+      - name: Terraform Init
+        run: terraform init -input=false # Initialize Terraform without asking for user input
 
       # Step to validate Terraform configuration
       - name: Terraform Validate
         run: terraform validate # Validate the Terraform configuration to ensure it's correct
+
+      # Step to check and format Terraform code
+      - name: Terraform Format Check
+        run: terraform fmt -check -diff ${MAIN_TF_FILE} # Check if the Terraform files are properly formatted
 
       # Step to install TFLint for linting Terraform code
       - name: Install TFLint
@@ -61,10 +65,6 @@ jobs:
       # Step to run TFLint for linting
       - name: Run TFLint
         run: tflint # Run TFLint to check Terraform code for potential issues
-
-      # Step to initialize Terraform
-      - name: Terraform Init
-        run: terraform init -input=false # Initialize Terraform without asking for user input
 
       # Combined Step to Generate, Apply, or Destroy Terraform Plan
       - name: Terraform Plan, Apply, or Destroy
