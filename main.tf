@@ -51,15 +51,15 @@ variable "ami_id" {
 
 # If AWS credentials file does not exist, prompt for AWS access and secret keys
 variable "aws_access_key" {
-  description = "AWS Access Key ID"                  # Description for the AWS Access Key variable
-  type        = string                               # Defines the type as a string for the AWS Access Key
-  sensitive   = true                                 # Marks the variable as sensitive, so it will not be displayed in output
+  description = "AWS Access Key ID" # Description for the AWS Access Key variable
+  type        = string              # Defines the type as a string for the AWS Access Key
+  sensitive   = true                # Marks the variable as sensitive, so it will not be displayed in output
 }
 
 variable "aws_secret_key" {
-  description = "AWS Secret Access Key"              # Description for the AWS Secret Access Key variable
-  type        = string                               # Defines the type as a string for the AWS Secret Access Key
-  sensitive   = true                                 # Marks the variable as sensitive, so it will not be displayed in output
+  description = "AWS Secret Access Key" # Description for the AWS Secret Access Key variable
+  type        = string                  # Defines the type as a string for the AWS Secret Access Key
+  sensitive   = true                    # Marks the variable as sensitive, so it will not be displayed in output
 }
 
 # Provider Configuration - Specifies the AWS provider and the region where resources will be deployed
@@ -216,4 +216,10 @@ output "ec2_instance_id" {
 output "elastic_ip" {
   description = "The Elastic IP address associated with the WireGuard EC2 instance"
   value       = aws_eip.wireguard_eip.public_ip # Output the Elastic IP
+}
+
+# Resource to display the message about the credentials
+output "credentials_check" {
+  description = "Check if the AWS credentials file exists"
+  value       = local.credentials_exists ? "Credentials file found" : "Credentials file not found. Please set AWS credentials."
 }
