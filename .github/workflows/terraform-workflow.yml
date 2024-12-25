@@ -70,10 +70,10 @@ jobs:
       - name: Terraform Plan, Apply, or Destroy
         run: |
           # Generate the Terraform plan
-          terraform plan -out=tfplan -input=false # Generate a plan to preview the changes
+          terraform plan -out=wireguard-manager.tfplan -input=false # Generate a plan to preview the changes
 
           # Apply the Terraform plan
-          terraform apply -auto-approve tfplan # Apply the changes automatically without prompting for approval
+          terraform apply -auto-approve wireguard-manager.tfplan # Apply the changes automatically without prompting for approval
 
           # Destroy the infrastructure after applying the plan
           terraform destroy -auto-approve # Destroy the resources to clean up after applying the plan
