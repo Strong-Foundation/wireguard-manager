@@ -7,10 +7,14 @@ on:
   push:
     branches:
       - main # Trigger workflow on push to main branch
+    paths:
+      - "**.tf" # Only trigger workflow if any .tf files have been modified
   # Trigger the workflow on any pull request to the main branch
   pull_request:
     branches:
       - main # Trigger workflow on pull request to main branch
+    paths:
+      - "**.tf" # Only trigger workflow if any .tf files have been modified
   # Schedule the workflow to run every week at 00:00 UTC
   schedule:
     - cron: "0 0 * * 0" # Run every week at 00:00 UTC
@@ -23,7 +27,7 @@ jobs:
     # Name of the job
     name: Terraform Workflow # Define the job name
     # Specify the type of runner to use for the job
-    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner for the job
 
     # Define the main.tf file as a variable for easier maintenance
     env:
