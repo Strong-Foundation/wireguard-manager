@@ -62,20 +62,6 @@ provider "aws" {
   secret_key = var.aws_secret_key # AWS Secret Access Key, provided via Terraform variable
 }
 
-# Custom Validation for Required Variables
-
-# Ensure that AWS access and secret keys are provided
-resource "null_resource" "check_required_variables" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-        echo "Error: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required."
-        exit 1
-      fi
-    EOT
-  }
-}
-
 # Resource: VPC - Creates a new VPC for the EC2 instance with CIDR block 10.0.0.0/16
 resource "aws_vpc" "wireguard_vpc" {
   cidr_block           = "10.0.0.0/16" # CIDR block for the VPC, allows up to 65,536 IP addresses
