@@ -75,13 +75,13 @@ jobs:
       - name: Terraform Plan, Apply, or Destroy
         run: |
           # Generate the Terraform plan
-          terraform plan -out=wireguard-manager.tfplan -input=false # Generate a plan to preview the changes
+          terraform plan -var "aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var "aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -out=wireguard-manager.tfplan -input=false # Generate a plan to preview the changes
 
           # Apply the Terraform plan
-          terraform apply -auto-approve wireguard-manager.tfplan # Apply the changes automatically without prompting for approval
+          terraform apply -var "aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var "aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -auto-approve wireguard-manager.tfplan # Apply the changes automatically without prompting for approval
 
           # Destroy the infrastructure after applying the plan
-          terraform destroy -auto-approve # Destroy the resources to clean up after applying the plan
+          terraform destroy -var "aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" -var "aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" -auto-approve # Destroy the resources to clean up after applying the plan
 
       # Final step to check if changes occurred and commit and push any changes to main.tf (if formatted)
       - name: Check Changes and Commit to main.tf
