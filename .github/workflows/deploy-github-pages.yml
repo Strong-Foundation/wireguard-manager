@@ -45,7 +45,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     # Specify the runner environment for executing this job
-    # Here we are using the latest version of Ubuntu available on GitHub Actions
     runs-on: ubuntu-latest
 
     # Define the steps that make up this job
@@ -69,7 +68,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           # The name of the artifact being created
-          name: github-pages-artifact
+          name: github-pages
           # A multi-line list of paths that should be included in the artifact
           # These files will be uploaded and later deployed to GitHub Pages
           path: |
