@@ -1,7 +1,9 @@
 # Terraform Block - Specifies the provider and version requirements for Terraform
 terraform {
+  required_version = ">= 1.10" # Specifies the required Terraform version (1.10 or higher)
   # Required Providers Section - Defines the providers to be used for the configuration
   required_providers {
+
     # AWS provider configuration - This tells Terraform to use the AWS provider and specifies the version.
     aws = {
       source  = "hashicorp/aws" # Specifies the source of the AWS provider from HashiCorp
@@ -10,24 +12,34 @@ terraform {
 
     # TLS provider configuration - This tells Terraform to use the TLS provider to generate a key pair.
     tls = {
-      source = "hashicorp/tls" # Specifies the source for the TLS provider (used for generating keys)
+      source  = "hashicorp/tls" # Specifies the source for the TLS provider (used for generating keys)
+      version = "~> 4.0"        # Add a version constraint for tls provider
     }
+
+    null = {
+      source  = "hashicorp/null" # Add null provider if used
+      version = "~> 3.0"         # Add a version constraint for null provider
+    }
+
   }
 }
 
 # Global Variables Section - Defines variables that will be used throughout the configuration
 variable "region" {
   description = "AWS region" # The AWS region where resources will be deployed (e.g., us-east-1)
+  type        = string       # String type for the region variable
   default     = "us-east-1"  # Default value for the region variable (you can override this in the Terraform plan)
 }
 
 variable "instance_type" {
   description = "EC2 instance type" # The EC2 instance type to deploy (e.g., t2.micro)
+  type        = string              # String type for the instance type
   default     = "t2.micro"          # Default instance type for the EC2 instance
 }
 
 variable "ami_id" {
   description = "AMI ID for EC2 instance" # The AMI ID used to launch the EC2 instance
+  type        = string                    # String type for the AMI ID
   default     = "ami-0c55b159cbfafe1f0"   # Default Ubuntu AMI (you may want to update this to the latest AMI)
 }
 
