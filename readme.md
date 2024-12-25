@@ -132,7 +132,7 @@ Now that you have `curl` and `bash` installed, you can proceed with installing t
 1. First, use `curl` to download the script and save it in `/usr/local/bin/`:
 
    ```bash
-   curl https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/wireguard-manager.sh --create-dirs -o /usr/local/bin/wireguard-manager.sh
+   curl https://raw.githubusercontent.com/Strong-Foundation/wireguard-manager/main/wireguard-manager.sh --create-dirs -o /usr/local/bin/wireguard-manager.sh
    ```
 
 2. Next, make the script user executable:
