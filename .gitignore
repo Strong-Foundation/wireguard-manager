@@ -14,6 +14,9 @@ crash.log
 # Ignore the .terraform directory
 .terraform/
 
+# Ignore Terraform plan files
+*.tfplan
+
 # Ignore Terraform lock file
 .terraform.lock.hcl
 
