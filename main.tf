@@ -24,6 +24,12 @@ terraform {
   }
 }
 
+# Check if AWS credentials file exists in the specified folder
+locals {
+  aws_credentials_file = "${path.module}/.aws/credentials"      # Path to the AWS credentials file in the specified folder
+  credentials_exists   = fileexists(local.aws_credentials_file) # Checks if the file exists
+}
+
 # Global Variables Section - Defines variables that will be used throughout the configuration
 variable "region" {
   description = "AWS region" # The AWS region where resources will be deployed (e.g., us-east-1)
@@ -43,16 +49,17 @@ variable "ami_id" {
   default     = "ami-0c55b159cbfafe1f0"   # Default Ubuntu AMI (you may want to update this to the latest AMI)
 }
 
+# If AWS credentials file does not exist, prompt for AWS access and secret keys
 variable "aws_access_key" {
-  description = "AWS Access Key ID" # AWS Access Key ID (required)
-  type        = string              # String type for the access key
-  sensitive   = true                # Sensitive information, don't show in Terraform output
+  description = "AWS Access Key ID"                  # Description for the AWS Access Key variable
+  type        = string                               # Defines the type as a string for the AWS Access Key
+  sensitive   = true                                 # Marks the variable as sensitive, so it will not be displayed in output
 }
 
 variable "aws_secret_key" {
-  description = "AWS Secret Access Key" # AWS Secret Access Key (required)
-  type        = string                  # String type for the secret key
-  sensitive   = true                    # Sensitive information, don't show in Terraform output
+  description = "AWS Secret Access Key"              # Description for the AWS Secret Access Key variable
+  type        = string                               # Defines the type as a string for the AWS Secret Access Key
+  sensitive   = true                                 # Marks the variable as sensitive, so it will not be displayed in output
 }
 
 # Provider Configuration - Specifies the AWS provider and the region where resources will be deployed
