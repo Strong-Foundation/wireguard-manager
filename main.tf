@@ -123,8 +123,8 @@ resource "aws_route_table_association" "wireguard_subnet_route_association" {
 
 # Resource: AWS Key Pair - Creates a key pair in AWS using the public key from the locally generated ED25519 private key
 resource "aws_key_pair" "wireguard_key" {
-  key_name   = "wireguard-ed25519-key-pair"                 # Name for the SSH key pair that will be created in AWS
-  public_key = tls_private_key.wireguard_key.public_key_pem # Corrected to use the public_key_pem attribute
+  key_name   = "wireguard-ed25519-key-pair"                     # Name for the SSH key pair that will be created in AWS
+  public_key = tls_private_key.wireguard_key.public_key_openssh # Use the public key from the generated key pair
 }
 
 # Resource: AWS Security Group - Creates a security group to allow specific inbound traffic (SSH and WireGuard)
@@ -195,6 +195,8 @@ resource "aws_eip" "wireguard_eip" {
 # Resource: TLS Private Key - Generates an ED25519 private key
 resource "tls_private_key" "wireguard_key" {
   algorithm = "ED25519" # Generate an ED25519 key pair
+  # Optionally, you can specify a passphrase for the private key
+  # passphrase = "some-secure-passphrase"
 }
 
 # Outputs Section - Defines the outputs that Terraform will display after `terraform apply`
@@ -222,4 +224,20 @@ output "elastic_ip" {
 output "credentials_check" {
   description = "Check if the AWS credentials file exists"
   value       = local.credentials_exists ? "Credentials file found" : "Credentials file not found. Please set AWS credentials."
+}
+
+# Save the private key to a file locally using the 'file' resource
+resource "file" "wireguard_private_key" {
+  content = tls_private_key.wireguard_key.private_key_pem
+  path    = "~/.ssh/wireguard_private_key.pem"
+}
+
+# Output the key pair name for reference
+output "key_pair_name" {
+  value = aws_key_pair.wireguard_key.key_name
+}
+
+# Output the private key path
+output "private_key_path" {
+  value = "~/.ssh/wireguard_private_key.pem"
 }
