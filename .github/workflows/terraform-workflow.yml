@@ -9,15 +9,18 @@ on:
       - main # Trigger workflow on push to main branch
     paths:
       - "**.tf" # Only trigger workflow if any .tf files have been modified
+
   # Trigger the workflow on any pull request to the main branch
   pull_request:
     branches:
       - main # Trigger workflow on pull request to main branch
     paths:
       - "**.tf" # Only trigger workflow if any .tf files have been modified
+
   # Schedule the workflow to run every week at 00:00 UTC
   schedule:
     - cron: "0 0 * * 0" # Run every week at 00:00 UTC
+
   # Allow manual triggering of the workflow
   workflow_dispatch: # Allow manual triggering of the workflow
 
@@ -32,6 +35,8 @@ jobs:
     # Define the main.tf file as a variable for easier maintenance
     env:
       MAIN_TF_FILE: main.tf # Assign the main.tf filename to a variable for reuse
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }} # Use AWS Access Key from GitHub Secrets
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Use AWS Secret Key from GitHub Secrets
 
     steps:
       # Step to checkout the repository code
