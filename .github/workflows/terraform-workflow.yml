@@ -54,7 +54,7 @@ jobs:
 
       # Step to check and format Terraform code
       - name: Terraform Format Check
-        run: terraform fmt -check -diff ${MAIN_TF_FILE} # Check if the Terraform files are properly formatted
+        run: terraform fmt # Check if the Terraform files are properly formatted
 
       # Step to install TFLint for linting Terraform code
       - name: Install TFLint

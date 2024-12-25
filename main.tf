@@ -118,7 +118,7 @@ resource "aws_route_table_association" "wireguard_subnet_route_association" {
 
 # Resource: AWS Key Pair - Creates a key pair in AWS using the public key from the locally generated ED25519 private key
 resource "aws_key_pair" "wireguard_key" {
-  key_name   = "wireguard-ed25519-key-pair"             # Name for the SSH key pair that will be created in AWS
+  key_name   = "wireguard-ed25519-key-pair"                 # Name for the SSH key pair that will be created in AWS
   public_key = tls_private_key.wireguard_key.public_key_pem # Corrected to use the public_key_pem attribute
 }
 
