@@ -187,6 +187,11 @@ resource "aws_eip" "wireguard_eip" {
   instance = aws_instance.wireguard_instance.id # Associates the Elastic IP with the EC2 instance
 }
 
+# Resource: TLS Private Key - Generates an ED25519 private key
+resource "tls_private_key" "wireguard_key" {
+  algorithm = "ED25519" # Generate an ED25519 key pair
+}
+
 # Outputs Section - Defines the outputs that Terraform will display after `terraform apply`
 output "ec2_public_ip" {
   description = "The public IP address of the WireGuard EC2 instance"
