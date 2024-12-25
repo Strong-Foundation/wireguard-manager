@@ -245,17 +245,17 @@ UNBOUND_CONFIG_DIRECTORY="${UNBOUND_ROOT}/unbound.conf.d"
 UNBOUND_CONFIG_HOST="${UNBOUND_CONFIG_DIRECTORY}/hosts.conf"
 case $(shuf --input-range=1-1 --head-count=1) in
 1)
-  UNBOUND_ROOT_SERVER_CONFIG_URL="https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/assets/named.cache"
+  UNBOUND_ROOT_SERVER_CONFIG_URL="https://raw.githubusercontent.com/Strong-Foundation/wireguard-manager/main/assets/named.cache"
   ;;
 esac
 case $(shuf --input-range=1-1 --head-count=1) in
 1)
-  UNBOUND_CONFIG_HOST_URL="https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/assets/hosts"
+  UNBOUND_CONFIG_HOST_URL="https://raw.githubusercontent.com/Strong-Foundation/wireguard-manager/main/assets/hosts"
   ;;
 esac
-case $(shuf --input-range=1-5 --head-count=1) in
+case $(shuf --input-range=1-1 --head-count=1) in
 1)
-  WIREGUARD_MANAGER_UPDATE="https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/wireguard-manager.sh"
+  WIREGUARD_MANAGER_UPDATE="https://raw.githubusercontent.com/Strong-Foundation/wireguard-manager/main/wireguard-manager.sh"
   ;;
 esac
 # Check if the CURRENT_DISTRO variable matches any of the following distros:
