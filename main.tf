@@ -16,11 +16,17 @@ terraform {
       version = "~> 4.0"        # Add a version constraint for tls provider
     }
 
+    # Null provider configuration - This tells Terraform to use the null provider if needed.
     null = {
       source  = "hashicorp/null" # Add null provider if used
       version = "~> 3.0"         # Add a version constraint for null provider
     }
 
+    # Local provider configuration - This tells Terraform to use the local provider if needed.
+    local = {
+      source  = "hashicorp/local"
+      version = "2.5.2"
+    }
   }
 }
 
@@ -227,9 +233,9 @@ output "credentials_check" {
 }
 
 # Save the private key to a file locally using the 'file' resource
-resource "file" "wireguard_private_key" {
-  content = tls_private_key.wireguard_key.private_key_pem
-  path    = "~/.ssh/wireguard_private_key.pem"
+resource "local_file" "wireguard_private_key" {
+  content  = tls_private_key.wireguard_key.private_key_pem
+  filename = "~/.ssh/wireguard_private_key.pem"
 }
 
 # Output the key pair name for reference
