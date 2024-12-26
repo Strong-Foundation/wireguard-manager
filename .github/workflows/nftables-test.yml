@@ -1,0 +1,30 @@
+name: Test the Least Version of nftables Rules # Define the name of the workflow
+
+# Trigger the workflow manually, on a schedule, or when the file is changed
+on:
+
+  schedule:
+    - cron: "0 0 * * 0" # Schedule to run every Sunday at midnight UTC
+
+  push:
+    paths:
+      - nftables-test.sh # Trigger the workflow when nftables-test.sh file changes
+
+  workflow_dispatch: # Trigger manually via GitHub Actions UI
+
+
+jobs:
+  nftables-test: # Define the job
+    runs-on: ubuntu-latest # Use an Ubuntu runner to execute the job
+
+    env:
+      NFTABLES_TEST_SCRIPT_PATH: nftables-test.sh # Set the path to the script as an environment variable
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout code # Step to get the code from the repository
+        uses: actions/checkout@v2 # Action to checkout the code
+
+      # Step 2: Run the script from the env variable (file path)
+      - name: Run nftables-test.sh from env variable # Step to execute the script
+        run: bash $NFTABLES_TEST_SCRIPT_PATH # Run the script using the file path stored in the environment variable
