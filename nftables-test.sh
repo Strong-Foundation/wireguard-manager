@@ -73,15 +73,19 @@ sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr tcp tcp dport ${DNS_POR
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over TCP (IPv4)
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr tcp tcp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over TCP (IPv6)
 
-# Security Enhancements: Set restrictive policies by default
-sudo nft add rule inet ${TABLE_NAME} INPUT drop   # Set the default policy to drop all input traffic
-sudo nft add rule inet ${TABLE_NAME} FORWARD drop # Set the default policy to drop all forwarded traffic
+# Security Enhancements: Drop non-DNS traffic in the tunnel
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} udp dport != ${DNS_PORT} drop  # Drop non-DNS UDP traffic from the IPv4 subnet
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} udp dport != ${DNS_PORT} drop # Drop non-DNS UDP traffic from the IPv6 subnet
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} tcp dport != ${DNS_PORT} drop  # Drop non-DNS TCP traffic from the IPv4 subnet
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} tcp dport != ${DNS_PORT} drop # Drop non-DNS TCP traffic from the IPv6 subnet
 
-# Explicitly allow DNS traffic from the VPN subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} udp dport ${DNS_PORT} accept  # Allow UDP DNS traffic from IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} udp dport ${DNS_PORT} accept # Allow UDP DNS traffic from IPv6 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} tcp dport ${DNS_PORT} accept  # Allow TCP DNS traffic from IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport ${DNS_PORT} accept # Allow TCP DNS traffic from IPv6 subnet
+# Security Enhancements: Restrict access to DNS from private IPs only
+sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} udp dport ${DNS_PORT} accept  # Allow DNS UDP traffic only from private IPv4 subnet
+sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} udp dport ${DNS_PORT} accept # Allow DNS UDP traffic only from private IPv6 subnet
+sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} tcp dport ${DNS_PORT} accept  # Allow DNS TCP traffic only from private IPv4 subnet
+sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport ${DNS_PORT} accept # Allow DNS TCP traffic only from private IPv6 subnet
+sudo nft add rule inet ${TABLE_NAME} INPUT udp dport ${DNS_PORT} drop                            # Drop all other DNS UDP traffic
+sudo nft add rule inet ${TABLE_NAME} INPUT tcp dport ${DNS_PORT} drop                            # Drop all other DNS TCP traffic
 
 # Explicitly allow VPN traffic on the network interface
 sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} udp dport ${VPN_PORT} accept                 # Allow incoming WireGuard traffic on the interface (IPv4)
