@@ -73,11 +73,12 @@ sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr tcp tcp dport ${DNS_POR
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over TCP (IPv4)
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr tcp tcp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over TCP (IPv6)
 
-# Security Enhancements: Drop non-DNS traffic in the tunnel
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} udp dport != ${DNS_PORT} drop  # Drop non-DNS UDP traffic from the IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} udp dport != ${DNS_PORT} drop # Drop non-DNS UDP traffic from the IPv6 subnet
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} tcp dport != ${DNS_PORT} drop  # Drop non-DNS TCP traffic from the IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} tcp dport != ${DNS_PORT} drop # Drop non-DNS TCP traffic from the IPv6 subnet
+# Security Enhancements
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} ip daddr != ${IPv4_SUBNET} drop # Drop all non-subnet traffic from the IPv4 subnet
+# sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} udp dport != ${DNS_PORT} drop  # Drop non-DNS UDP traffic from the IPv4 subnet
+# sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} udp dport != ${DNS_PORT} drop # Drop non-DNS UDP traffic from the IPv6 subnet
+# sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} tcp dport != ${DNS_PORT} drop  # Drop non-DNS TCP traffic from the IPv4 subnet
+# sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} tcp dport != ${DNS_PORT} drop # Drop non-DNS TCP traffic from the IPv6 subnet
 
 # Security Enhancements: Restrict access to DNS from private IPs only
 sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} udp dport ${DNS_PORT} accept   # Allow DNS UDP traffic only from private IPv4 subnet
@@ -93,8 +94,14 @@ sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport !=
 sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} udp dport ${VPN_PORT} accept                 # Allow incoming WireGuard traffic on the interface (IPv4)
 sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} ip6 nexthdr udp udp dport ${VPN_PORT} accept # Allow incoming WireGuard traffic on the interface (IPv6)
 
+# Loging rules
+sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} log    # Log incoming traffic from the IPv4 subnet
+sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} log   # Log incoming traffic from the IPv6 subnet
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} log  # Log forwarded traffic from the IPv4 subnet
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} log # Log forwarded traffic from the IPv6 subnet
+
 # List the current nftables rules before flushing
 sudo nft list ruleset # Display the current nftables rules for verification
 
 # Flush nftables ruleset to reset after testing
-sudo nft flush ruleset # Clear all rules after testing
+# sudo nft flush ruleset # Clear all rules after testing
