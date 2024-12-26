@@ -57,42 +57,16 @@ sudo nft add rule inet ${TABLE_NAME} POSTROUTING ip saddr ${IPv4_SUBNET} oifname
 sudo nft add rule inet ${TABLE_NAME} POSTROUTING ip6 saddr ${IPv6_SUBNET} oifname ${NETWORK_INTERFACE} masquerade   # Add a rule for IPv6 masquerading
 
 # INPUT chain
-sudo nft add chain inet ${TABLE_NAME} INPUT { type filter hook input priority filter \; policy accept \; } # Create a chain for filtering input traffic
-sudo nft add rule inet ${TABLE_NAME} INPUT ip protocol udp udp dport ${VPN_PORT} accept                    # Allow incoming WireGuard traffic (IPv4)
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 nexthdr udp udp dport ${VPN_PORT} accept                    # Allow incoming WireGuard traffic (IPv6)
-sudo nft add rule inet ${TABLE_NAME} INPUT ip protocol udp udp dport ${DNS_PORT} accept                    # Allow incoming DNS requests over UDP (IPv4)
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 nexthdr udp udp dport ${DNS_PORT} accept                    # Allow incoming DNS requests over UDP (IPv6)
-sudo nft add rule inet ${TABLE_NAME} INPUT ip protocol tcp tcp dport ${DNS_PORT} accept                    # Allow incoming DNS requests over TCP (IPv4)
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 nexthdr tcp tcp dport ${DNS_PORT} accept                    # Allow incoming DNS requests over TCP (IPv6)
+sudo nft add chain inet ${TABLE_NAME} INPUT { type filter hook input priority filter \; policy accept \; }           # Create a chain for filtering input traffic
+sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} udp dport ${VPN_PORT} accept                 # Allow incoming WireGuard traffic on the interface (IPv4)
+sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} ip6 nexthdr udp udp dport ${VPN_PORT} accept # Allow incoming WireGuard traffic on the interface (IPv6)
+sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} udp dport ${DNS_PORT} accept                      # Allow DNS UDP traffic only from private IPv4 subnet
+sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} udp dport ${DNS_PORT} accept                     # Allow DNS UDP traffic only from private IPv6 subnet
+sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} tcp dport ${DNS_PORT} accept                      # Allow DNS TCP traffic only from private IPv4 subnet
+sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport ${DNS_PORT} accept                     # Allow DNS TCP traffic only from private IPv6 subnet
 
 # FORWARD chain
 sudo nft add chain inet ${TABLE_NAME} FORWARD { type filter hook forward priority filter \; policy accept \; } # Create a chain for filtering forwarded traffic
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol udp udp dport ${DNS_PORT} accept                      # Allow forwarding of DNS requests over UDP (IPv4)
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr udp udp dport ${DNS_PORT} accept                      # Allow forwarding of DNS requests over UDP (IPv6)
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol udp udp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over UDP (IPv4)
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr udp udp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over UDP (IPv6)
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp dport ${DNS_PORT} accept                      # Allow forwarding of DNS requests over TCP (IPv4)
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr tcp tcp dport ${DNS_PORT} accept                      # Allow forwarding of DNS requests over TCP (IPv6)
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over TCP (IPv4)
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr tcp tcp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over TCP (IPv6)
-
-# Security Enhancements
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} ip daddr != ${IPv4_SUBNET} drop   # Block IPv4 traffic from VPN clients to any destination outside the VPN subnet
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} ip6 daddr != ${IPv6_SUBNET} drop # Block IPv6 traffic from VPN clients to any destination outside the VPN subnet
-
-# Security Enhancements: Restrict access to DNS from private IPs only
-sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} udp dport ${DNS_PORT} accept   # Allow DNS UDP traffic only from private IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} udp dport ${DNS_PORT} accept  # Allow DNS UDP traffic only from private IPv6 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} tcp dport ${DNS_PORT} accept   # Allow DNS TCP traffic only from private IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport ${DNS_PORT} accept  # Allow DNS TCP traffic only from private IPv6 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} udp dport != ${DNS_PORT} drop  # Drop all other UDP traffic except DNS from private IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} udp dport != ${DNS_PORT} drop # Drop all other UDP traffic except DNS from private IPv6 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} tcp dport != ${DNS_PORT} drop  # Drop all other TCP traffic except DNS from private IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport != ${DNS_PORT} drop # Drop all other TCP traffic except DNS from private IPv6 subnet
-
-# Explicitly allow VPN traffic on the network interface
-sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} udp dport ${VPN_PORT} accept                 # Allow incoming WireGuard traffic on the interface (IPv4)
-sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} ip6 nexthdr udp udp dport ${VPN_PORT} accept # Allow incoming WireGuard traffic on the interface (IPv6)
 
 # List the current nftables rules before flushing
 sudo nft list ruleset # Display the current nftables rules for verification
