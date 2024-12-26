@@ -21,35 +21,35 @@ IPv4_SUBNET="10.0.0.0/8"            # IPv4 subnet to be used for NAT
 IPv6_SUBNET="fd00::/8"              # IPv6 subnet to be used for NAT
 
 # Enable IP forwarding for both IPv4 and IPv6
-sysctl -w net.ipv4.ip_forward=1          # Enable IPv4 forwarding
-sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding
+sudo sysctl -w net.ipv4.ip_forward=1          # Enable IPv4 forwarding
+sudo sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding
 
 # Flush any existing rules to start fresh
-nft flush ruleset
+sudo nft flush ruleset
 
 # Create nftables table and add chains
-nft add table inet ${TABLE_NAME}
+sudo nft add table inet ${TABLE_NAME}
 
 # INPUT chain - Allow incoming traffic
-nft add chain inet ${TABLE_NAME} INPUT { type filter hook input priority filter \; policy accept \; }
-nft add rule inet ${TABLE_NAME} INPUT ip protocol udp udp dport ${VPN_PORT} accept # Allow VPN traffic
-nft add rule inet ${TABLE_NAME} INPUT ip protocol udp udp dport ${DNS_PORT} accept # Allow UDP DNS requests
-nft add rule inet ${TABLE_NAME} INPUT ip protocol tcp tcp dport ${DNS_PORT} accept # Allow TCP DNS requests
+sudo nft add chain inet ${TABLE_NAME} INPUT { type filter hook input priority filter \; policy accept \; }
+sudo nft add rule inet ${TABLE_NAME} INPUT ip protocol udp udp dport ${VPN_PORT} accept # Allow VPN traffic
+sudo nft add rule inet ${TABLE_NAME} INPUT ip protocol udp udp dport ${DNS_PORT} accept # Allow UDP DNS requests
+sudo nft add rule inet ${TABLE_NAME} INPUT ip protocol tcp tcp dport ${DNS_PORT} accept # Allow TCP DNS requests
 
 # FORWARD chain - Allow forwarding traffic
-nft add chain inet ${TABLE_NAME} FORWARD { type filter hook forward priority filter \; policy accept \; }
-nft add rule inet ${TABLE_NAME} FORWARD ip protocol udp udp dport ${DNS_PORT} accept # Allow forwarding of DNS requests (UDP)
-nft add rule inet ${TABLE_NAME} FORWARD ip protocol udp udp sport ${DNS_PORT} accept # Allow forwarding of DNS responses (UDP)
-nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp dport ${DNS_PORT} accept # Allow forwarding of DNS requests (TCP)
-nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp sport ${DNS_PORT} accept # Allow forwarding of DNS responses (TCP)
+sudo nft add chain inet ${TABLE_NAME} FORWARD { type filter hook forward priority filter \; policy accept \; }
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol udp udp dport ${DNS_PORT} accept # Allow forwarding of DNS requests (UDP)
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol udp udp sport ${DNS_PORT} accept # Allow forwarding of DNS responses (UDP)
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp dport ${DNS_PORT} accept # Allow forwarding of DNS requests (TCP)
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp sport ${DNS_PORT} accept # Allow forwarding of DNS responses (TCP)
 
 # POSTROUTING chain - Enable NAT (Masquerading) for both IPv4 and IPv6
-nft add chain inet ${TABLE_NAME} POSTROUTING { type nat hook postrouting priority srcnat \; policy accept \; }
-nft add rule inet ${TABLE_NAME} POSTROUTING ip saddr ${IPv4_SUBNET} oifname ${NETWORK_INTERFACE} masquerade  # IPv4 masquerading
-nft add rule inet ${TABLE_NAME} POSTROUTING ip6 saddr ${IPv6_SUBNET} oifname ${NETWORK_INTERFACE} masquerade # IPv6 masquerading
+sudo nft add chain inet ${TABLE_NAME} POSTROUTING { type nat hook postrouting priority srcnat \; policy accept \; }
+sudo nft add rule inet ${TABLE_NAME} POSTROUTING ip saddr ${IPv4_SUBNET} oifname ${NETWORK_INTERFACE} masquerade  # IPv4 masquerading
+sudo nft add rule inet ${TABLE_NAME} POSTROUTING ip6 saddr ${IPv6_SUBNET} oifname ${NETWORK_INTERFACE} masquerade # IPv6 masquerading
 
 # List the current nftables rules before flushing
-nft list ruleset
+sudo nft list ruleset
 
 # Flush nftables ruleset to reset after testing
-nft flush ruleset
+sudo nft flush ruleset
