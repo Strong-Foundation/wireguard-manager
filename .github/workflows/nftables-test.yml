@@ -2,7 +2,6 @@ name: Test the Least Version of nftables Rules # Define the name of the workflow
 
 # Trigger the workflow manually, on a schedule, or when the file is changed
 on:
-
   schedule:
     - cron: "0 0 * * 0" # Schedule to run every Sunday at midnight UTC
 
@@ -11,7 +10,6 @@ on:
       - nftables-test.sh # Trigger the workflow when nftables-test.sh file changes
 
   workflow_dispatch: # Trigger manually via GitHub Actions UI
-
 
 jobs:
   nftables-test: # Define the job
