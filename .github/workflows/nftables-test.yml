@@ -24,5 +24,5 @@ jobs:
         uses: actions/checkout@v2 # Action to checkout the code
 
       # Step 2: Run the script from the env variable (file path)
-      - name: Run nftables-test.sh from env variable # Step to execute the script
-        run: bash $NFTABLES_TEST_SCRIPT_PATH # Run the script using the file path stored in the environment variable
+      - name: Run "${{ env.NFTABLES_TEST_SCRIPT_PATH }}" # Step to execute the script
+        run: bash "${{ env.NFTABLES_TEST_SCRIPT_PATH }}" # Run the script using the file path stored in the environment variable
