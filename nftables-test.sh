@@ -30,10 +30,13 @@ fi
 # Define variables for interfaces, subnets, and ports
 TABLE_NAME="wg_rules"               # Name of the nftables table
 NETWORK_INTERFACE="enxb827eb7c4fab" # Network interface for masquerading (e.g., eth0)
+WIREGUARD_INTERFACE="wg0"           # WireGuard interface name
 VPN_PORT="51820"                    # VPN port (WireGuard)
 DNS_PORT="53"                       # DNS port (both UDP and TCP)
 IPv4_SUBNET="10.0.0.0/8"            # IPv4 subnet to be used for NAT
 IPv6_SUBNET="fd00::/8"              # IPv6 subnet to be used for NAT
+HOST_IPV4="10.0.0.1"                # IPv4 address of the VPN server
+HOST_IPV6="fd00::1"                 # IPv6 address of the VPN server
 
 # Enable IP forwarding for both IPv4 and IPv6
 sudo sysctl -w net.ipv4.ip_forward=1          # Enable IPv4 forwarding
@@ -74,11 +77,8 @@ sudo nft add rule inet ${TABLE_NAME} FORWARD ip protocol tcp tcp sport ${DNS_POR
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 nexthdr tcp tcp sport ${DNS_PORT} accept                      # Allow forwarding of DNS responses over TCP (IPv6)
 
 # Security Enhancements
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} ip daddr != ${IPv4_SUBNET} drop # Drop all non-subnet traffic from the IPv4 subnet
-# sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} udp dport != ${DNS_PORT} drop  # Drop non-DNS UDP traffic from the IPv4 subnet
-# sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} udp dport != ${DNS_PORT} drop # Drop non-DNS UDP traffic from the IPv6 subnet
-# sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} tcp dport != ${DNS_PORT} drop  # Drop non-DNS TCP traffic from the IPv4 subnet
-# sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} tcp dport != ${DNS_PORT} drop # Drop non-DNS TCP traffic from the IPv6 subnet
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} ip daddr != ${IPv4_SUBNET} drop   # Block IPv4 traffic from VPN clients to any destination outside the VPN subnet
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} ip6 daddr != ${IPv6_SUBNET} drop # Block IPv6 traffic from VPN clients to any destination outside the VPN subnet
 
 # Security Enhancements: Restrict access to DNS from private IPs only
 sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} udp dport ${DNS_PORT} accept   # Allow DNS UDP traffic only from private IPv4 subnet
@@ -93,12 +93,6 @@ sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport !=
 # Explicitly allow VPN traffic on the network interface
 sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} udp dport ${VPN_PORT} accept                 # Allow incoming WireGuard traffic on the interface (IPv4)
 sudo nft add rule inet ${TABLE_NAME} INPUT iifname ${NETWORK_INTERFACE} ip6 nexthdr udp udp dport ${VPN_PORT} accept # Allow incoming WireGuard traffic on the interface (IPv6)
-
-# Loging rules
-sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} log    # Log incoming traffic from the IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} log   # Log incoming traffic from the IPv6 subnet
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} log  # Log forwarded traffic from the IPv4 subnet
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} log # Log forwarded traffic from the IPv6 subnet
 
 # List the current nftables rules before flushing
 sudo nft list ruleset # Display the current nftables rules for verification
