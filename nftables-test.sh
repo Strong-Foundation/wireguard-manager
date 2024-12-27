@@ -69,7 +69,6 @@ sudo nft add rule inet ${TABLE_NAME} INPUT ct state invalid drop                
 sudo nft add rule inet ${TABLE_NAME} INPUT ip saddr ${IPv4_SUBNET} udp dport ${DNS_PORT} ip daddr ${HOST_IPV4} accept   # Allow DNS queries to a specific DNS server (IPv4)
 sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} udp dport ${DNS_PORT} ip6 daddr ${HOST_IPV6} accept # Allow DNS queries to a specific DNS server (IPv6)
 sudo nft add rule inet ${TABLE_NAME} INPUT ct state related,established accept                                          # Allow related and established connections
-sudo nft add rule inet ${TABLE_NAME} INPUT drop                                                                         # Drop all other incoming traffic
 
 # FORWARD chain
 sudo nft add chain inet ${TABLE_NAME} FORWARD { type filter hook forward priority filter \; policy accept \; } # Create a chain for filtering forwarded traffic
@@ -77,7 +76,6 @@ sudo nft add rule inet ${TABLE_NAME} FORWARD ct state invalid drop              
 sudo nft add rule inet ${TABLE_NAME} FORWARD ct state related,established accept                               # Allow related and established connections
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} oifname ${NETWORK_INTERFACE} accept       # Allow all outbound IPv4 traffic
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} oifname ${NETWORK_INTERFACE} accept      # Allow all outbound IPv6 traffic
-sudo nft add rule inet ${TABLE_NAME} FORWARD drop                                                              # Drop all other incoming traffic
 
 # OUTPUT chain
 sudo nft add chain inet ${TABLE_NAME} OUTPUT { type filter hook output priority filter \; policy accept \; } # Create a chain for filtering output traffic
