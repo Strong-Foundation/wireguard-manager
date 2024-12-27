@@ -124,4 +124,5 @@ sed '1s/^;//' |                    # Remove the first semicolon
 sed '$s/;$//' |                    # Remove the last semicolon
 sed '/^[[:space:]]*$/d' |          # Delete empty lines
 sed 's/%$//' |                     # Remove the trailing percent sign
+sed 's/;;*/;/g' |                  # Replace multiple semicolons with one
 tr -d '\n'                         # Join everything into a single line
