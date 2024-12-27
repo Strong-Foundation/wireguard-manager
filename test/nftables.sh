@@ -67,7 +67,6 @@ sudo nft add chain inet "${TABLE_NAME}" PREROUTING { type nat hook prerouting pr
 sudo nft add chain inet "${TABLE_NAME}" POSTROUTING { type nat hook postrouting priority srcnat \; policy accept \; }   # POSTROUTING chain handles packets after routing decisions are made. It's used for source NAT (srcnat), mainly for masquerading outgoing traffic
 sudo nft add rule inet "${TABLE_NAME}" POSTROUTING ip saddr "${IPv4_SUBNET}" oifname "${NETWORK_INTERFACE}" masquerade  # This rule applies NAT (masquerading) to IPv4 traffic with source addresses in the VPN subnet (10.0.0.0/8) when going out through the specified network interface
 sudo nft add rule inet "${TABLE_NAME}" POSTROUTING ip6 saddr "${IPv6_SUBNET}" oifname "${NETWORK_INTERFACE}" masquerade # This rule applies NAT (masquerading) to IPv6 traffic with source addresses in the VPN subnet (fd00::/8) when going out through the specified network interface
-sudo nft add rule inet "${TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" masquerade                            # This rule applies NAT (masquerading) to all outbound traffic
 # --- POSTROUTING CHAIN (NAT rules after routing) ---
 
 # --- INPUT CHAIN (Filtering input traffic) ---
