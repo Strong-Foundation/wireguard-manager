@@ -27,8 +27,8 @@ fi
 
 # Ensure sudo is installed
 if [ ! -x "$(command -v sudo)" ]; then
-    apt-get update          # Update package lists to ensure availability of sudo
-    apt-get install -y sudo # Install sudo if not already installed
+    sudo apt-get update          # Update package lists to ensure availability of sudo
+    sudo apt-get install -y sudo # Install sudo if not already installed
 fi
 
 # Ensure nftables is installed
