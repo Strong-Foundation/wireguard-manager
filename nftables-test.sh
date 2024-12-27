@@ -78,6 +78,7 @@ sudo nft list ruleset # Display the current nftables rules for verification
 
 # Other Project
 for i in {1..50}; do echo -n "---"; done
+echo ""
 
 # Different Project.
 
