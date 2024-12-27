@@ -13,7 +13,8 @@ on:
     paths:
       - "nftables-test.sh" # Trigger the workflow when nftables-test.sh file changes
 
-  workflow_dispatch: # Trigger manually via GitHub Actions UI
+  # Trigger manually via GitHub Actions UI
+  workflow_dispatch:
 
 jobs:
   nftables-test: # Define the job
