@@ -114,13 +114,7 @@ sudo nft list ruleset # Display the current nftables rules for verification
 for i in {1..50}; do echo -n "---"; done
 echo ""
 
-# Different Project.
-
-TABLE_NAME="wg_rules"     # Name of the nftables table
-IPv4_SUBNET="10.0.0.0/8"  # IPv4 subnet to be used for NAT
-IPv6_SUBNET="fd00::/8"    # IPv6 subnet to be used for NAT
-DNS_PORT="53"             # DNS port (both UDP and TCP)
-WIREGUARD_INTERFACE="wg0" # WireGuard interface name
+# Test the script with a dry-run to display the nftables rules
 
 WIREGUARD_RULES_OUTPUT=$(echo "# --- Create nftables table for WireGuard VPN server ---
 sudo nft add table inet ${TABLE_NAME} # Create a new table for nftables to store firewall rules (inet refers to both IPv4 and IPv6)
