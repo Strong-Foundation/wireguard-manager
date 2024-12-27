@@ -122,7 +122,7 @@ IPv6_SUBNET="fd00::/8"    # IPv6 subnet to be used for NAT
 DNS_PORT="53"             # DNS port (both UDP and TCP)
 WIREGUARD_INTERFACE="wg0" # WireGuard interface name
 
-WIREGUARD_RULES_OUTPUT$=$(echo "# --- Create nftables table for WireGuard VPN server ---
+WIREGUARD_RULES_OUTPUT=$(echo "# --- Create nftables table for WireGuard VPN server ---
 sudo nft add table inet ${TABLE_NAME} # Create a new table for nftables to store firewall rules (inet refers to both IPv4 and IPv6)
 # --- Create nftables table for WireGuard VPN server ---
 
