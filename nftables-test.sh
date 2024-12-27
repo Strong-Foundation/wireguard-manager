@@ -82,11 +82,11 @@ echo ""
 
 # Different Project.
 
-TABLE_NAME="wg_rules"               # Name of the nftables table
-IPv4_SUBNET="10.0.0.0/8"            # IPv4 subnet to be used for NAT
-IPv6_SUBNET="fd00::/8"              # IPv6 subnet to be used for NAT
-DNS_PORT="53"                       # DNS port (both UDP and TCP)
-WIREGUARD_INTERFACE="wg0"           # WireGuard interface name
+TABLE_NAME="wg_rules"     # Name of the nftables table
+IPv4_SUBNET="10.0.0.0/8"  # IPv4 subnet to be used for NAT
+IPv6_SUBNET="fd00::/8"    # IPv6 subnet to be used for NAT
+DNS_PORT="53"             # DNS port (both UDP and TCP)
+WIREGUARD_INTERFACE="wg0" # WireGuard interface name
 
 echo "# Enable IP forwarding for both IPv4 and IPv6
 sudo sysctl -w net.ipv4.ip_forward=1          # Enable IPv4 forwarding
@@ -115,14 +115,14 @@ sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport ${
 # FORWARD chain
 sudo nft add chain inet ${TABLE_NAME} FORWARD { type filter hook forward priority filter \; policy accept \; } # Create a chain for filtering forwarded traffic
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} oifname ${NETWORK_INTERFACE} accept     # Allow all outbound IPv4 traffic
-sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} oifname ${NETWORK_INTERFACE} accept    # Allow all outbound IPv6 traffic" | \
-sed 's/#.*//g' |                    # Remove comments
-sed 's/[[:space:]]\+/ /g' |        # Replace multiple spaces with a single space
-sed 's/ $//' |                     # Remove trailing spaces
-sed 's/$/;/' |                     # Add semicolons to the end of each line
-sed '1s/^;//' |                    # Remove the first semicolon
-sed '$s/;$//' |                    # Remove the last semicolon
-sed '/^[[:space:]]*$/d' |          # Delete empty lines
-sed 's/%$//' |                     # Remove the trailing percent sign
-sed 's/;;*/;/g' |                  # Replace multiple semicolons with one
-tr -d '\n'                         # Join everything into a single line
+sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} oifname ${NETWORK_INTERFACE} accept    # Allow all outbound IPv6 traffic" |
+    sed 's/#.*//g' |            # Remove comments
+    sed 's/[[:space:]]\+/ /g' | # Replace multiple spaces with a single space
+    sed 's/ $//' |              # Remove trailing spaces
+    sed 's/$/;/' |              # Add semicolons to the end of each line
+    sed '1s/^;//' |             # Remove the first semicolon
+    sed '$s/;$//' |             # Remove the last semicolon
+    sed '/^[[:space:]]*$/d' |   # Delete empty lines
+    sed 's/%$//' |              # Remove the trailing percent sign
+    sed 's/;;\+/;/g' |          # Replace two or more semicolons with one
+    tr -d '\n'                  # Join everything into a single line
