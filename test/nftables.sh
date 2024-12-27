@@ -15,6 +15,16 @@
 #   5. Support for Both IPv4 and IPv6
 #   6. Final Rule Display for Verification
 
+# Check if the script is running inside github actions, IF not, exit.
+if [ -z "$GITHUB_REPOSITORY" ]; then
+    echo "GitHub Actions environment not detected."
+    echo "This script is meant to be run in a GitHub Actions workflow."
+    exit 1
+else
+    echo "GitHub Actions environment detected."
+    echo "Github Repo:" $GITHUB_REPOSITORY
+fi
+
 # Ensure sudo is installed
 if [ ! -x "$(command -v sudo)" ]; then
     apt-get update          # Update package lists to ensure availability of sudo
@@ -112,7 +122,7 @@ IPv6_SUBNET="fd00::/8"    # IPv6 subnet to be used for NAT
 DNS_PORT="53"             # DNS port (both UDP and TCP)
 WIREGUARD_INTERFACE="wg0" # WireGuard interface name
 
-echo "# --- Create nftables table for WireGuard VPN server ---
+WIREGUARD_RULES_OUTPUT$=$(echo "# --- Create nftables table for WireGuard VPN server ---
 sudo nft add table inet ${TABLE_NAME} # Create a new table for nftables to store firewall rules (inet refers to both IPv4 and IPv6)
 # --- Create nftables table for WireGuard VPN server ---
 
@@ -167,4 +177,7 @@ sudo nft add rule inet ${TABLE_NAME} OUTPUT ip6 daddr ${HOST_IPV6} udp sport ${D
     sed 's/$/;/' |              # Add semicolons to the end of each line
     sed '1s/^;//' |             # Remove the first semicolon
     sed '$s/;$//' |             # Remove the last semicolon
-    tr -d '\n'                  # Join everything into a single line
+    tr -d '\n')                 # Join everything into a single line
+
+# Print the nftables rules for WireGuard VPN server
+echo "${WIREGUARD_RULES_OUTPUT}$"
