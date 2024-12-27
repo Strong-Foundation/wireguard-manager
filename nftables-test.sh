@@ -35,15 +35,15 @@ sudo sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding
 sudo nft flush ruleset # Remove all existing nftables rules to avoid conflicts
 
 # Define variables for interfaces, subnets, and ports
-TABLE_NAME="wg_rules"               # Name of the nftables table where the rules will be added
-NETWORK_INTERFACE="enxb827eb7c4fab" # Network interface used for masquerading (e.g., eth0 or the interface for the outgoing internet connection)
-WIREGUARD_INTERFACE="wg0"           # WireGuard interface name (used to identify the VPN interface)
-VPN_PORT="51820"                    # Port used for WireGuard VPN traffic (default is 51820)
-DNS_PORT="53"                       # Port used for DNS (both UDP and TCP)
-IPv4_SUBNET="10.0.0.0/8"            # IPv4 subnet used for NAT (Network Address Translation) for internal VPN clients
-IPv6_SUBNET="fd00::/8"              # IPv6 subnet used for NAT for internal VPN clients
-HOST_IPV4="10.0.0.1"                # IPv4 address of the VPN server (used for DNS queries and routing)
-HOST_IPV6="fd00::1"                 # IPv6 address of the VPN server (used for DNS queries and routing)
+WIREGUARD_INTERFACE="wg0"                 # WireGuard interface name (used to identify the VPN interface)
+TABLE_NAME="${WIREGUARD_INTERFACE}-table" # Name of the nftables table where the rules will be added
+NETWORK_INTERFACE="enxb827eb7c4fab"       # Network interface used for masquerading (e.g., eth0 or the interface for the outgoing internet connection)
+VPN_PORT="51820"                          # Port used for WireGuard VPN traffic (default is 51820)
+DNS_PORT="53"                             # Port used for DNS (both UDP and TCP)
+IPv4_SUBNET="10.0.0.0/8"                  # IPv4 subnet used for NAT (Network Address Translation) for internal VPN clients
+IPv6_SUBNET="fd00::/8"                    # IPv6 subnet used for NAT for internal VPN clients
+HOST_IPV4="10.0.0.1"                      # IPv4 address of the VPN server (used for DNS queries and routing)
+HOST_IPV6="fd00::1"                       # IPv6 address of the VPN server (used for DNS queries and routing)
 
 # --- Create nftables table for WireGuard VPN server ---
 sudo nft add table inet ${TABLE_NAME} # Create a new table for nftables to store firewall rules (inet refers to both IPv4 and IPv6)
