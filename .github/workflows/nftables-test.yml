@@ -5,9 +5,13 @@ on:
   schedule:
     - cron: "0 0 * * 0" # Schedule to run every Sunday at midnight UTC
 
+  pull_request:
+    paths:
+      - "nftables-test.sh"
+
   push:
     paths:
-      - nftables-test.sh # Trigger the workflow when nftables-test.sh file changes
+      - "nftables-test.sh" # Trigger the workflow when nftables-test.sh file changes
 
   workflow_dispatch: # Trigger manually via GitHub Actions UI
 
