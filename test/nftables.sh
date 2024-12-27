@@ -142,6 +142,20 @@ if [ $(echo "$(nft list ruleset)" | wc -l) -ge 2 ]; then
     echo "Flushing existing nftables rules..."
 fi
 
+# Check if IPv4 forwarding is enabled
+if [ "$(cat /proc/sys/net/ipv4/ip_forward)" != "1" ]; then
+    echo "IPv4 forwarding is disabled."
+    # Enable IPv6 forwarding
+    sudo sysctl -w net.ipv4.ip_forward=1 # Enable IPv4 forwarding
+fi
+
+# Check if IPv6 forwarding is enabled
+if [ "$(cat /proc/sys/net/ipv6/conf/all/forwarding)" != "1" ]; then
+    echo "IPv6 forwarding is disabled."
+    # Enable IPv4 forwarding
+    sudo sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding
+fi
+
 # Define variables for interfaces, subnets, and ports
 WIREGUARD_INTERFACE="wg0"                           # WireGuard interface name (used to identify the VPN interface)
 WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table" # Name of the nftables table where the rules will be added
