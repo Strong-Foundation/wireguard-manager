@@ -140,13 +140,13 @@ sudo nft add rule inet ${TABLE_NAME} INPUT ip6 saddr ${IPv6_SUBNET} tcp dport ${
 sudo nft add chain inet ${TABLE_NAME} FORWARD { type filter hook forward priority filter \; policy accept \; } # Create a chain for filtering forwarded traffic
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip saddr ${IPv4_SUBNET} oifname ${NETWORK_INTERFACE} accept     # Allow all outbound IPv4 traffic
 sudo nft add rule inet ${TABLE_NAME} FORWARD ip6 saddr ${IPv6_SUBNET} oifname ${NETWORK_INTERFACE} accept    # Allow all outbound IPv6 traffic" |
-    sed 's/#.*//g'        # Remove comments
-sed 's/[[:space:]]\+/ /g' # Replace multiple spaces with a single space
-sed 's/ $//'              # Remove trailing spaces
-sed 's/$/;/'              # Add semicolons to the end of each line
-sed '1s/^;//'             # Remove the first semicolon (if any)
-sed '$s/;$//'             # Remove the last semicolon
-sed '/^[[:space:]]*$/d'   # Delete empty lines
-sed 's/%$//'              # Remove the trailing percent sign
-sed 's/;;\+/;/g'          # Replace two or more semicolons with one
-tr -d '\n'                # Join everything into a single line
+    sed 's/#.*//g' |            # Remove comments
+    sed 's/[[:space:]]\+/ /g' | # Replace multiple spaces with a single space
+    sed 's/ $//' |              # Remove trailing spaces
+    sed 's/$/;/' |              # Add semicolons to the end of each line
+    sed '1s/^;//' |             # Remove the first semicolon
+    sed '$s/;$//' |             # Remove the last semicolon
+    sed '/^[[:space:]]*$/d' |   # Delete empty lines
+    sed 's/%$//' |              # Remove the trailing percent sign
+    sed 's/;;\+/;/g' |          # Replace two or more semicolons with one
+    tr -d '\n'                  # Join everything into a single line
