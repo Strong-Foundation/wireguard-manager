@@ -79,10 +79,6 @@ sudo nft add rule inet "${TABLE_NAME}" INPUT ip6 saddr "${IPv6_SUBNET}" udp dpor
 sudo nft add rule inet "${TABLE_NAME}" INPUT ip saddr "${IPv4_SUBNET}" tcp dport "${DNS_PORT}" ip daddr "${HOST_IPV4}" accept   # This rule accepts DNS queries (TCP on port 53) from clients within the specified IPv4 subnet (10.0.0.0/8) to the specific DNS server (10.0.0.1)
 sudo nft add rule inet "${TABLE_NAME}" INPUT ip6 saddr "${IPv6_SUBNET}" tcp dport "${DNS_PORT}" ip6 daddr "${HOST_IPV6}" accept # This rule accepts DNS queries (TCP on port 53) from clients within the specified IPv6 subnet (fd00::/8) to the specific DNS server (fd00::1)
 sudo nft add rule inet "${TABLE_NAME}" INPUT ct state invalid drop                                                              # This rule drops packets with invalid connection tracking state
-sudo nft add rule inet "${TABLE_NAME}" INPUT ip saddr "${IPv4_SUBNET}" ip daddr != "${HOST_IPV4}" drop                          # Block VPN clients from connecting to other local IPs except DNS server
-sudo nft add rule inet "${TABLE_NAME}" INPUT ip6 saddr "${IPv6_SUBNET}" ip6 daddr != "${HOST_IPV6}" drop                        # Block VPN clients from connecting to other local IPs except DNS server
-sudo nft add rule inet "${TABLE_NAME}" INPUT ip saddr "${IPv4_SUBNET}" drop                                                     # Block all other traffic from VPN clients to local IPs
-sudo nft add rule inet "${TABLE_NAME}" INPUT ip6 saddr "${IPv6_SUBNET}" drop                                                    # Block all other traffic from VPN clients to local IPs
 # --- INPUT CHAIN (Filtering input traffic) ---
 
 # --- FORWARD CHAIN (Filtering forwarded traffic) ---
@@ -93,8 +89,6 @@ sudo nft add rule inet "${TABLE_NAME}" FORWARD ip saddr "${IPv4_SUBNET}" udp dpo
 sudo nft add rule inet "${TABLE_NAME}" FORWARD ip6 saddr "${IPv6_SUBNET}" udp dport "${DNS_PORT}" ip6 daddr "${HOST_IPV6}" accept # Allow VPN clients to forward DNS queries to the DNS server
 sudo nft add rule inet "${TABLE_NAME}" FORWARD ip saddr "${IPv4_SUBNET}" tcp dport "${DNS_PORT}" ip daddr "${HOST_IPV4}" accept   # Allow VPN clients to forward DNS queries (TCP) to the DNS server
 sudo nft add rule inet "${TABLE_NAME}" FORWARD ip6 saddr "${IPv6_SUBNET}" tcp dport "${DNS_PORT}" ip6 daddr "${HOST_IPV6}" accept # Allow VPN clients to forward DNS queries (TCP) to the DNS server
-sudo nft add rule inet "${TABLE_NAME}" FORWARD ip saddr "${IPv4_SUBNET}" ip daddr != "${HOST_IPV4}" drop                          # Block all other forwarded traffic from VPN clients to local IPs
-sudo nft add rule inet "${TABLE_NAME}" FORWARD ip6 saddr "${IPv6_SUBNET}" ip6 daddr != "${HOST_IPV6}" drop                        # Block all other forwarded traffic from VPN clients to local IPs
 # --- FORWARD CHAIN (Filtering forwarded traffic) ---
 
 # --- OUTPUT CHAIN (Filtering output traffic) ---
