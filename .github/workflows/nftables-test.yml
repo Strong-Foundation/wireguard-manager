@@ -7,11 +7,11 @@ on:
 
   pull_request:
     paths:
-      - "nftables-test.sh"
+      - "test/nftables.sh"
 
   push:
     paths:
-      - "nftables-test.sh" # Trigger the workflow when nftables-test.sh file changes
+      - "test/nftables.sh" # Trigger the workflow when nftables.sh file changes
 
   # Trigger manually via GitHub Actions UI
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest # Use an Ubuntu runner to execute the job
 
     env:
-      NFTABLES_TEST_SCRIPT_PATH: nftables-test.sh # Set the path to the script as an environment variable
+      NFTABLES_TEST_SCRIPT_PATH: "test/nftables.sh" # Set the path to the script as an environment variable
 
     steps:
       # Step 1: Checkout the repository code
