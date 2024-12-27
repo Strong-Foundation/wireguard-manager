@@ -37,9 +37,31 @@ if [ ! -x "$(command -v nft)" ]; then
     sudo apt-get install -y nftables # Install nftables if not already installed
 fi
 
+# Ensure coreutils is installed
+if [ ! -x "$(command -v cat)" ]; then
+    sudo apt-get update               # Update package lists to ensure availability of sudo
+    sudo apt-get install -y coreutils # Install sudo if not already installed
+fi
+
 # Enable IP forwarding for both IPv4 and IPv6
-sudo sysctl -w net.ipv4.ip_forward=1          # Enable IPv4 forwarding
-sudo sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding
+
+# Check if IPv4 forwarding is enabled
+if [ "$(cat /proc/sys/net/ipv4/ip_forward)" == "1" ]; then
+    echo "IPv4 forwarding is enabled."
+else
+    echo "IPv4 forwarding is disabled."
+    # Enable IPv6 forwarding
+    sudo sysctl -w net.ipv4.ip_forward=1 # Enable IPv4 forwarding
+fi
+
+# Check if IPv6 forwarding is enabled
+if [ "$(cat /proc/sys/net/ipv6/conf/all/forwarding)" == "1" ]; then
+    echo "IPv6 forwarding is enabled."
+else
+    echo "IPv6 forwarding is disabled."
+    # Enable IPv4 forwarding
+    sudo sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding
+fi
 
 # Flush any existing rules to start fresh
 sudo nft flush ruleset # Remove all existing nftables rules to avoid conflicts
