@@ -32,7 +32,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Provides the GitHub token for authentication
         with:
-          tag_name: releases-${{ env.CURRENT_DATE }} # Tag name for the release
-          release_name: releases-${{ env.CURRENT_DATE }} # Name of the release
+          tag_name: releases-${{ steps.current_date.outputs.CURRENT_DATE }} # Tag name for the release
+          release_name: releases-${{ steps.current_date.outputs.CURRENT_DATE }} # Name of the release
           draft: false # Indicates that the release is not a draft
           prerelease: false # Indicates that the release is not a pre-release
