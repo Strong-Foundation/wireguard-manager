@@ -133,6 +133,9 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${WIREGUARD_H
 # View all the blocked logs.
 # journalctl -f
 
+# Exit the script (uncomment the line below to exit the script) to prevent further execution
+# exit 1
+
 # ---------------------------------------------- #
 for _ in {1..50}; do echo -n "---"; done
 echo ""
