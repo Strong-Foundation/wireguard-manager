@@ -102,6 +102,3 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" log prefix "VPN_DROP_IPv4_OTHER " drop                                                # Log and drop packets that are not destined for the server but have WireGuard IPv4 source
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" log prefix "VPN_DROP_IPv6_OTHER " drop                                              # Log and drop packets that are not destined for the server but have WireGuard IPv6 source
 # --- FORWARD CHAIN (Filtering forwarded traffic) ---
-
-# Exit the script (uncomment the line below to exit the script) to prevent further execution
-# exit 1
