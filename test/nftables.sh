@@ -128,6 +128,9 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip daddr "${HOST_IPV4}" 
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${HOST_IPV6}" udp sport "${WIREGUARD_DNS_PORT}" accept             # This rule allows outgoing DNS queries (UDP on port 53) from the server to the specific DNS server (fd00::1)
 # --- OUTPUT CHAIN (Filtering output traffic) ---
 
+# View all the blocked logs.
+# journalctl -f
+
 # Show all the rules to verify that they are working and in order.
 if [ $(echo "$(nft list ruleset)" | wc -l) -ge 2 ]; then
     sudo nft list ruleset # View all the rules.
