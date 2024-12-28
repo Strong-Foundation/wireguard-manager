@@ -133,12 +133,6 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${WIREGUARD_H
 # View all the blocked logs.
 # journalctl -f
 
-# Flush any existing nftables rules to avoid conflicts
-if [ $(echo "$(nft list ruleset)" | wc -l) -ge 2 ]; then
-    echo "Flushing existing nftables rules..."
-    sudo nft flush ruleset # Remove all existing nftables rules
-fi
-
 # ---------------------------------------------- #
 for _ in {1..50}; do echo -n "---"; done
 echo ""
