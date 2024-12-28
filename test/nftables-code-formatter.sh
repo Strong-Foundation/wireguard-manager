@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# Define variables for interfaces, subnets, and ports
+WIREGUARD_INTERFACE="wg0"                                                                          # WireGuard interface name (used to identify the VPN interface)
+WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                                # Name of the nftables table where the rules will be added
+NETWORK_INTERFACE="enxb827eb7c4fab"                                                                # Network interface used for masquerading (e.g., eth0 or the interface for the outgoing internet connection)
+WIREGUARD_VPN_PORT="51820"                                                                         # Port used for WireGuard VPN traffic (default is 51820)
+WIREGUARD_DNS_PORT="53"                                                                            # Port used for DNS (both UDP and TCP)
+WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                                 # IPv4 subnet used for NAT (Network Address Translation) for internal VPN clients
+WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                   # IPv6 subnet used for NAT for internal VPN clients
+WIREGUARD_HOST_IPV4="10.0.0.1"                                                                     # Define the server's IPv4 address (WireGuard server's private IP)
+WIREGUARD_HOST_IPV6="fd00::1"                                                                      # Define the server's IPv6 address (WireGuard server's private IP)
+PRIVATE_LOCAL_IPV4_SUBNET="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8" # Define the local IPv4 subnets to drop (private IP ranges)
+PRIVATE_LOCAL_IPV6_SUBNET="fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32"                    # Define the local IPv6 subnets to drop (private IP ranges)
+
 # Test the script with a dry-run to display the nftables rules
 
 WIREGUARD_RULES_OUTPUT=$(echo "# --- Create nftables table for WireGuard VPN server ---
