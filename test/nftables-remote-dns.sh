@@ -1,70 +1,63 @@
 #!/bin/bash
 
 # WireGuard and nftables Configuration Script
-# This script sets up basic nftables rules for a WireGuard VPN server with NAT and DNS forwarding.
-# It ensures required packages are installed, IP forwarding is enabled, and nftables rules are configured securely.
-#
-# Usage:
-#   Run this script as root or with sudo privileges.
-#
-# Sections:
-#   1. Prerequisites Check
-#   2. IP Forwarding Enablement
-#   3. nftables Configuration (Masquerading, DNS, VPN)
-#   4. Security Enhancements (Restrictive Policies)
-#   5. Support for Both IPv4 and IPv6
-#   6. Final Rule Display for Verification
+# This script configures nftables rules to work with a WireGuard VPN server.
+# It ensures that the necessary packages are installed, IP forwarding is enabled,
+# and secure nftables rules are created for NAT, DNS, and firewall filtering.
 
-# Check if the script is running inside GitHub Actions
+# Check if the script is running inside a GitHub Actions environment
 if [ -z "$GITHUB_REPOSITORY" ]; then
+    # If the GITHUB_REPOSITORY variable is not set, it is not a GitHub Actions environment
     echo "GitHub Actions environment not detected."
     echo "This script is meant to be run in a GitHub Actions workflow."
-    exit 1
+    exit 1 # Exit with error since this script is meant for GitHub Actions
 else
+    # If GITHUB_REPOSITORY is set, confirm the environment and display the repository name
     echo "GitHub Actions environment detected."
     echo "GitHub Repo: ${GITHUB_REPOSITORY}"
 fi
 
-# Ensure `sudo` is installed
+# Ensure `sudo` is installed on the system
 if [ ! -x "$(command -v sudo)" ]; then
     echo "Installing 'sudo'..."
-    sudo apt-get update          # Update package lists to ensure availability of sudo
-    sudo apt-get install -y sudo # Install sudo if not already installed
+    sudo apt-get update          # Update the system's package list to get the latest metadata
+    sudo apt-get install -y sudo # Install sudo if not already present
 fi
 
 # Ensure `nftables` is installed
 if [ ! -x "$(command -v nft)" ]; then
     echo "Installing 'nftables'..."
-    sudo apt-get update              # Update package lists to ensure availability of nftables
-    sudo apt-get install -y nftables # Install nftables if not already installed
+    sudo apt-get update              # Update the system's package list
+    sudo apt-get install -y nftables # Install nftables if not already present
 fi
 
-# Ensure `coreutils` (provides `cat`) is installed
+# Ensure `coreutils` is installed (provides `cat` command)
 if [ ! -x "$(command -v cat)" ]; then
     echo "Installing 'coreutils'..."
-    sudo apt-get update               # Update package lists to ensure availability of coreutils
-    sudo apt-get install -y coreutils # Install coreutils if not already installed
+    sudo apt-get update               # Update the system's package list
+    sudo apt-get install -y coreutils # Install coreutils if not already present
 fi
 
 # Enable IP forwarding for both IPv4 and IPv6
+# This ensures that the server can forward packets between network interfaces.
 echo "Checking IP forwarding settings..."
 
-# Check if IPv4 forwarding is enabled
+# Check and enable IPv4 forwarding if not already enabled
 if [ "$(cat /proc/sys/net/ipv4/ip_forward)" != "1" ]; then
     echo "IPv4 forwarding is disabled. Enabling now..."
-    sudo sysctl -w net.ipv4.ip_forward=1 # Enable IPv4 forwarding
+    sudo sysctl -w net.ipv4.ip_forward=1 # Enable IPv4 forwarding at runtime
 fi
 
-# Check if IPv6 forwarding is enabled
+# Check and enable IPv6 forwarding if not already enabled
 if [ "$(cat /proc/sys/net/ipv6/conf/all/forwarding)" != "1" ]; then
     echo "IPv6 forwarding is disabled. Enabling now..."
-    sudo sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding
+    sudo sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding at runtime
 fi
 
-# Flush any existing nftables rules to avoid conflicts
+# Flush existing nftables rules to avoid conflicts
 if [ $(echo "$(nft list ruleset)" | wc -l) -ge 2 ]; then
     echo "Flushing existing nftables rules..."
-    sudo nft flush ruleset # Remove all existing nftables rules
+    sudo nft flush ruleset # Clear all existing rules in nftables
 fi
 
 # Define variables for interfaces, subnets, and ports
@@ -104,10 +97,10 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERF
 sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD { type filter hook forward priority filter \; policy accept \; }                                                                                              # Create a FORWARD chain for filtering forwarded traffic
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8 } log prefix "VPN_DROP_IPv4_LOCAL " drop # Drop packets with local private IPs from the WireGuard subnet (IPv4)
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr { fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32 } log prefix "VPN_DROP_IPv6_LOCAL " drop                  # Drop packets with local private IPs from the WireGuard subnet (IPv6)
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept                                                                                          # Allow packets with WireGuard IPv4 source address, not destined for the server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept                                                                                        # Allow packets with WireGuard IPv6 source address, not destined for the server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" log prefix "VPN_DROP_IPv4_OTHER " drop                                                          # Log and drop packets that are not destined for the server but have WireGuard IPv4 source
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" log prefix "VPN_DROP_IPv6_OTHER " drop                                                        # Log and drop packets that are not destined for the server but have WireGuard IPv6 source
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept                                                                                # Allow packets with WireGuard IPv4 source address, not destined for the server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept                                                                              # Allow packets with WireGuard IPv6 source address, not destined for the server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" log prefix "VPN_DROP_IPv4_OTHER " drop                                                # Log and drop packets that are not destined for the server but have WireGuard IPv4 source
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" log prefix "VPN_DROP_IPv6_OTHER " drop                                              # Log and drop packets that are not destined for the server but have WireGuard IPv6 source
 # --- FORWARD CHAIN (Filtering forwarded traffic) ---
 
 # Exit the script (uncomment the line below to exit the script) to prevent further execution
