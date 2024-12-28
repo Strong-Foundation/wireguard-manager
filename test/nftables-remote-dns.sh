@@ -108,3 +108,6 @@ sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT { type filter hook outp
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                            # This rule drops packets that have an invalid connection tracking state for outgoing traffic
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established accept                              # This rule allows packets that are part of an already established connection or related to an established connection to be sent out
 # --- OUTPUT CHAIN (Filtering output traffic) ---
+
+# View all the blocked logs.
+# journalctl -f
