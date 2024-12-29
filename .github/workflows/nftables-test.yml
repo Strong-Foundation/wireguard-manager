@@ -1,33 +1,46 @@
 name: Test the Least Version of nftables Rules # Define the name of the workflow
 
-# Trigger the workflow manually, on a schedule, or when the file is changed
+# Define the events that trigger this workflow
 on:
+  # Trigger the workflow on a schedule (every Sunday at midnight UTC)
   schedule:
-    - cron: "0 0 * * 0" # Schedule to run every Sunday at midnight UTC
+    - cron: "0 0 * * 0" # This cron expression ensures the workflow runs every Sunday at midnight UTC
 
+  # Trigger when a pull request is created or updated that modifies a .sh file in the 'test' folder
   pull_request:
     paths:
-      - "test/nftables.sh"
+      - "test/**/*.sh" # Only trigger on changes to .sh files inside the 'test' folder or its subfolders
 
+  # Trigger when a push is made that modifies a .sh file in the 'test' folder
   push:
     paths:
-      - "test/nftables.sh" # Trigger the workflow when nftables.sh file changes
+      - "test/**/*.sh" # Only trigger on changes to .sh files inside the 'test' folder or its subfolders
 
-  # Trigger manually via GitHub Actions UI
+  # Allow the workflow to be triggered manually via the GitHub Actions UI
   workflow_dispatch:
 
 jobs:
-  nftables-test: # Define the job
-    runs-on: ubuntu-latest # Use an Ubuntu runner to execute the job
+  nftables-test: # Define the job that will be executed
+    runs-on: ubuntu-latest # The job will run on the latest available Ubuntu runner
 
+    # Set environment variables that can be used throughout the job
     env:
-      NFTABLES_TEST_SCRIPT_PATH: "test/nftables.sh" # Set the path to the script as an environment variable
+      NFTABLES_TEST_FOLDER_PATH: "test" # Set the path to the 'test' folder containing .sh files you want to run
 
     steps:
-      # Step 1: Checkout the repository code
-      - name: Checkout code # Step to get the code from the repository
-        uses: actions/checkout@v2 # Action to checkout the code
+      # Step 1: Checkout the repository's code
+      - name: Checkout code # This step checks out the code from the repository to the runner
+        uses: actions/checkout@v2 # Uses the official GitHub action to checkout the code
 
-      # Step 2: Run the script from the env variable (file path)
-      - name: Run "${{ env.NFTABLES_TEST_SCRIPT_PATH }}" # Step to execute the script
-        run: bash "${{ env.NFTABLES_TEST_SCRIPT_PATH }}" # Run the script using the file path stored in the environment variable
+      # Step 2: Find and execute all .sh files inside the 'test' folder
+      - name: Run all .sh files in the "test" folder # This step will loop through all .sh files in the 'test' folder
+        run: |
+          # Loop through all .sh files in the 'test' folder and execute them one by one
+          for script in "$GITHUB_WORKSPACE/${{ env.NFTABLES_TEST_FOLDER_PATH }}/*.sh"; do
+            if [ -f "$script" ]; then  # Check if the file is a regular file
+              echo "Running $script..."  # Output the name of the script being executed
+              bash "$script"  # Execute the script using bash
+            else
+              echo "No .sh files found in the 'test' folder."  # If no .sh files are found, print this message
+            fi
+          done
