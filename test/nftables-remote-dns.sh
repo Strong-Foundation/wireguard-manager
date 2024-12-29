@@ -81,12 +81,6 @@ sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create an nftables table for
 sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING { type nat hook prerouting priority dstnat \; policy accept \; } # Create a PREROUTING chain for NAT rules before routing
 # --- PREROUTING CHAIN (NAT rules before routing) ---
 
-# --- POSTROUTING CHAIN (NAT rules after routing) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING { type nat hook postrouting priority srcnat \; policy accept \; }             # Create a POSTROUTING chain for NAT rules after routing
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip saddr "${WIREGUARD_IPv4_SUBNET}" masquerade  # Masquerade the IPv4 packets going out via the network interface
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip6 saddr "${WIREGUARD_IPv6_SUBNET}" masquerade # Masquerade the IPv6 packets going out via the network interface
-# --- POSTROUTING CHAIN (NAT rules after routing) ---
-
 # --- INPUT CHAIN (Filtering input traffic) ---
 sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT { type filter hook input priority filter \; policy accept \; }                       # Create an INPUT chain for filtering input traffic
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} accept                 # Allow incoming UDP packets on WireGuard VPN port
@@ -108,6 +102,12 @@ sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT { type filter hook outp
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                            # This rule drops packets that have an invalid connection tracking state for outgoing traffic
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established accept                              # This rule allows packets that are part of an already established connection or related to an established connection to be sent out
 # --- OUTPUT CHAIN (Filtering output traffic) ---
+
+# --- POSTROUTING CHAIN (NAT rules after routing) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING { type nat hook postrouting priority srcnat \; policy accept \; }             # Create a POSTROUTING chain for NAT rules after routing
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip saddr "${WIREGUARD_IPv4_SUBNET}" masquerade  # Masquerade the IPv4 packets going out via the network interface
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip6 saddr "${WIREGUARD_IPv6_SUBNET}" masquerade # Masquerade the IPv6 packets going out via the network interface
+# --- POSTROUTING CHAIN (NAT rules after routing) ---
 
 # View all the blocked logs.
 # journalctl -f
