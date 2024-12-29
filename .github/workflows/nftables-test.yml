@@ -25,7 +25,7 @@ jobs:
 
     # Set environment variables that can be used throughout the job
     env:
-      NFTABLES_TEST_FOLDER_PATH: "test" # Set the path to the 'test' folder containing .sh files you want to run
+      TEST_FOLDER_PATH: "test" # Set the path to the 'test' folder containing .sh files you want to run
 
     steps:
       # Step 1: Checkout the repository's code
@@ -36,7 +36,7 @@ jobs:
       - name: Run all .sh files in the "test" folder # This step will loop through all .sh files in the 'test' folder
         run: |
           # Loop through all .sh files in the 'test' folder and execute them one by one
-          for script in "$GITHUB_WORKSPACE/${{ env.NFTABLES_TEST_FOLDER_PATH }}/*.sh"; do
+          for script in "$GITHUB_WORKSPACE/${{ env.TEST_FOLDER_PATH }}/*.sh"; do
             if [ -f "$script" ]; then  # Check if the file is a regular file
               echo "Running $script..."  # Output the name of the script being executed
               bash "$script"  # Execute the script using bash
