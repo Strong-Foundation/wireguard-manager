@@ -103,7 +103,7 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip6 saddr "${WIREGUARD_IPv6_SUBNET}" masquerade # Apply NAT masquerading to outgoing IPv6 traffic
 
 # View the nftables ruleset to verify the configuration
-nft list ruleset
+sudo nft list ruleset
 
 # View all the blocked logs.
 # journalctl -f
