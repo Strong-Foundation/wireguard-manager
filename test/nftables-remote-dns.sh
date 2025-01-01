@@ -61,53 +61,47 @@ if [ $(echo "$(nft list ruleset)" | wc -l) -ge 2 ]; then
 fi
 
 # Define variables for interfaces, subnets, and ports
-WIREGUARD_INTERFACE="wg0"                                                                          # WireGuard interface name (used to identify the VPN interface)
-WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                                # Name of the nftables table where the rules will be added
-NETWORK_INTERFACE="enxb827eb7c4fab"                                                                # Network interface used for masquerading (e.g., eth0 or the interface for the outgoing internet connection)
-WIREGUARD_VPN_PORT="51820"                                                                         # Port used for WireGuard VPN traffic (default is 51820)
-WIREGUARD_DNS_PORT="53"                                                                            # Port used for DNS (both UDP and TCP)
-WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                                 # IPv4 subnet used for NAT (Network Address Translation) for internal VPN clients
-WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                   # IPv6 subnet used for NAT for internal VPN clients
-WIREGUARD_HOST_IPV4="10.0.0.1"                                                                     # Define the server's IPv4 address (WireGuard server's private IP)
-WIREGUARD_HOST_IPV6="fd00::1"                                                                      # Define the server's IPv6 address (WireGuard server's private IP)
-PRIVATE_LOCAL_IPV4_SUBNET="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8" # Define the local IPv4 subnets to drop (private IP ranges)
-PRIVATE_LOCAL_IPV6_SUBNET="fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32"                    # Define the local IPv6 subnets to drop (private IP ranges)
+WIREGUARD_INTERFACE="wg0"                                                                          # Name of the WireGuard interface used for VPN connections
+WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                                # Name of the nftables table for WireGuard rules
+NETWORK_INTERFACE="enxb827eb7c4fab"                                                                # Outgoing network interface used for masquerading traffic (e.g., eth0)
+WIREGUARD_VPN_PORT="51820"                                                                         # Default WireGuard VPN traffic port
+WIREGUARD_DNS_PORT="53"                                                                            # DNS port used for VPN (UDP and TCP)
+WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                                 # IPv4 subnet used by the WireGuard VPN for client NAT
+WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                   # IPv6 subnet used by the WireGuard VPN for client NAT
+WIREGUARD_HOST_IPV4="10.0.0.1"                                                                     # IPv4 address of the WireGuard server
+WIREGUARD_HOST_IPV6="fd00::1"                                                                      # IPv6 address of the WireGuard server
+PRIVATE_LOCAL_IPV4_SUBNET="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8" # List of private IPv4 subnets to block
+PRIVATE_LOCAL_IPV6_SUBNET="fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32"                    # List of private IPv6 subnets to block
 
 # --- Create nftables table for WireGuard VPN server ---
-sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create an nftables table for managing rules for the WireGuard VPN
-# --- Create nftables table for WireGuard VPN server ---
+sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create an nftables table to manage firewall rules for the WireGuard VPN
 
 # --- PREROUTING CHAIN (NAT rules before routing) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING { type nat hook prerouting priority dstnat \; policy accept \; } # Create a PREROUTING chain for NAT rules before routing
-# --- PREROUTING CHAIN (NAT rules before routing) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING { type nat hook prerouting priority dstnat \; policy accept \; } # Define a PREROUTING chain to apply NAT rules before packet routing
 
 # --- INPUT CHAIN (Filtering input traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT { type filter hook input priority filter \; policy accept \; }                       # Create an INPUT chain for filtering input traffic
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} accept                 # Allow incoming UDP packets on WireGuard VPN port
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} accept # Allow incoming IPv6 UDP packets on WireGuard VPN port
-# --- INPUT CHAIN (Filtering input traffic) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT { type filter hook input priority filter \; policy accept \; }                       # Create an INPUT chain to filter incoming packets
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} accept                 # Allow UDP packets targeting the WireGuard port on the incoming interface
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} accept # Allow IPv6 UDP packets targeting the WireGuard port on the incoming interface
 
 # --- FORWARD CHAIN (Filtering forwarded traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD { type filter hook forward priority filter \; policy accept \; }                                                                                              # Create a FORWARD chain for filtering forwarded traffic
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8 } log prefix "VPN_DROP_IPv4_LOCAL " drop # Drop packets with local private IPs from the WireGuard subnet (IPv4)
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr { fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32 } log prefix "VPN_DROP_IPv6_LOCAL " drop                  # Drop packets with local private IPs from the WireGuard subnet (IPv6)
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept                                                                                # Allow packets with WireGuard IPv4 source address, not destined for the server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept                                                                              # Allow packets with WireGuard IPv6 source address, not destined for the server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" log prefix "VPN_DROP_IPv4_OTHER " drop                                                # Log and drop packets that are not destined for the server but have WireGuard IPv4 source
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" log prefix "VPN_DROP_IPv6_OTHER " drop                                              # Log and drop packets that are not destined for the server but have WireGuard IPv6 source
-# --- FORWARD CHAIN (Filtering forwarded traffic) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD { type filter hook forward priority filter \; policy accept \; }                                                                                              # Create a FORWARD chain to manage packets routed through the VPN
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8 } log prefix "VPN_DROP_IPv4_LOCAL " drop # Drop IPv4 packets from private subnets within the VPN subnet
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr { fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32 } log prefix "VPN_DROP_IPv6_LOCAL " drop                  # Drop IPv6 packets from private subnets within the VPN subnet
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept                                                                                # Allow packets with WireGuard IPv4 source not destined for the server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept                                                                              # Allow packets with WireGuard IPv6 source not destined for the server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" log prefix "VPN_DROP_IPv4_OTHER " drop                                                # Log and drop IPv4 packets from the WireGuard subnet not destined for the server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" log prefix "VPN_DROP_IPv6_OTHER " drop                                              # Log and drop IPv6 packets from the WireGuard subnet not destined for the server
 
 # --- OUTPUT CHAIN (Filtering output traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT { type filter hook output priority filter \; policy accept \; } # OUTPUT chain handles packets generated by the server itself. The policy is set to accept, but we'll add more specific rules for filtering output traffic
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                            # This rule drops packets that have an invalid connection tracking state for outgoing traffic
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established accept                              # This rule allows packets that are part of an already established connection or related to an established connection to be sent out
-# --- OUTPUT CHAIN (Filtering output traffic) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT { type filter hook output priority filter \; policy accept \; } # Create an OUTPUT chain to filter packets generated by the server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                            # Drop outgoing packets with invalid connection tracking state
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established accept                              # Allow outgoing packets related to established connections
 
 # --- POSTROUTING CHAIN (NAT rules after routing) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING { type nat hook postrouting priority srcnat \; policy accept \; }             # Create a POSTROUTING chain for NAT rules after routing
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip saddr "${WIREGUARD_IPv4_SUBNET}" masquerade  # Masquerade the IPv4 packets going out via the network interface
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip6 saddr "${WIREGUARD_IPv6_SUBNET}" masquerade # Masquerade the IPv6 packets going out via the network interface
-# --- POSTROUTING CHAIN (NAT rules after routing) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING { type nat hook postrouting priority srcnat \; policy accept \; }             # Define a POSTROUTING chain to apply NAT rules after routing
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip saddr "${WIREGUARD_IPv4_SUBNET}" masquerade  # Apply NAT masquerading to outgoing IPv4 traffic
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip6 saddr "${WIREGUARD_IPv6_SUBNET}" masquerade # Apply NAT masquerading to outgoing IPv6 traffic
 
 # View all the blocked logs.
 # journalctl -f
