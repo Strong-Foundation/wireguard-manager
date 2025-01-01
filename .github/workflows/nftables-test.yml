@@ -35,12 +35,22 @@ jobs:
       # Step 2: Find and execute all .sh files inside the 'test' folder
       - name: Run all .sh files in the "test" folder # This step will loop through all .sh files in the 'test' folder
         run: |
-          # Loop through all .sh files in the 'test' folder and execute them one by one
-          for script in "$GITHUB_WORKSPACE/${{ env.TEST_FOLDER_PATH }}/*.sh"; do
-            if [ -f "$script" ]; then  # Check if the file is a regular file
-              echo "Running $script..."  # Output the name of the script being executed
-              bash "$script"  # Execute the script using bash
+          # Find all .sh files in the specified folder and its subfolders
+          shell_scripts=$(find "${GITHUB_WORKSPACE}/${TEST_FOLDER_PATH}" -type f -name "*.sh")
+          # Check if the list of shell scripts is empty
+          if [ -z "${shell_scripts}" ]; then
+            echo "No shell scripts (.sh files) found in the '${TEST_FOLDER_PATH}' folder."
+            exit 0 # Exit successfully as there are no scripts to execute
+          fi
+          # Loop through each shell script found
+          for script_path in ${shell_scripts}; do
+            echo "Running ${script_path}..." # Print the name of the script being executed
+            chmod +x "${script_path}" # Ensure the script has executable permissions
+            # Execute the script and check for errors
+            if bash "${script_path}"; then
+              echo "Successfully executed: ${script_path}" # Print success message
             else
-              echo "No .sh files found in the 'test' folder."  # If no .sh files are found, print this message
+              echo "Error: Failed to execute ${script_path}" >&2 # Print error message to stderr
+              exit 1 # Exit with an error code if a script fails
             fi
           done
