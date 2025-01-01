@@ -21,7 +21,7 @@ function is-running-inside-github-action() {
 }
 
 # Check if the script is running inside a GitHub Actions environment
-is-running-inside-github-action
+# is-running-inside-github-action
 
 # Ensure `sudo` is installed on the system
 if [ ! -x "$(command -v sudo)" ]; then
