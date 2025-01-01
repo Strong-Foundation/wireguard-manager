@@ -51,7 +51,7 @@ if [ "$(sudo cat /proc/sys/net/ipv6/conf/all/forwarding)" != "1" ]; then
 fi
 
 # Flush existing nftables rules to avoid conflicts
-if [ "$(sudo nft list ruleset | wc -l)" -ge 2 ]; then
+if [ "$(sudo nft list ruleset 2>/dev/null | wc -l)" -ge 2 ]; then
     echo "Flushing existing nftables rules..."
     sudo nft flush ruleset # Clear all existing rules in nftables
 fi
