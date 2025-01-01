@@ -23,9 +23,6 @@ function is-running-inside-github-action() {
 # Check if the script is running inside a GitHub Actions environment
 is-running-inside-github-action
 
-# sed -i -e "s/is-running-inside-github-action/#is-running-inside-github-action/g" nftables-local-dns.sh
-# sed -i -e "s/#is-running-inside-github-action/is-running-inside-github-action/g" nftables-remote-dns.sh
-
 # Ensure `sudo` is installed on the system
 if [ ! -x "$(command -v sudo)" ]; then
     echo "Installing 'sudo'..."
