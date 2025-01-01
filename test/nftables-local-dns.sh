@@ -38,10 +38,6 @@ if [ ! -x "$(command -v cat)" ]; then
     sudo apt-get install -y coreutils # Install coreutils if not already present
 fi
 
-# Enable IP forwarding for both IPv4 and IPv6
-# This ensures that the server can forward packets between network interfaces.
-echo "Checking IP forwarding settings..."
-
 # Check and enable IPv4 forwarding if not already enabled
 if [ "$(sudo cat /proc/sys/net/ipv4/ip_forward)" != "1" ]; then
     echo "IPv4 forwarding is disabled. Enabling now..."
