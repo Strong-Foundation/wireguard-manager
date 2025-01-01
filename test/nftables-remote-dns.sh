@@ -65,7 +65,7 @@ fi
 # Define variables for interfaces, subnets, and ports
 WIREGUARD_INTERFACE="wg0"                                                                          # Name of the WireGuard interface used for VPN connections
 WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                                # Name of the nftables table for WireGuard rules
-NETWORK_INTERFACE="enxb827eb7c4fab"                                                                # Outgoing network interface used for masquerading traffic (e.g., eth0)
+NETWORK_INTERFACE="$(ip route | grep default | head --lines=1 | cut --delimiter=" " --fields=5)"   # Get the default network interface (e.g., eth0) for internet-bound traffic masquerading
 WIREGUARD_VPN_PORT="51820"                                                                         # Default WireGuard VPN traffic port
 WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                                 # IPv4 subnet used by the WireGuard VPN for client NAT
 WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                   # IPv6 subnet used by the WireGuard VPN for client NAT
