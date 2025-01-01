@@ -55,7 +55,7 @@ if [ "$(cat /proc/sys/net/ipv6/conf/all/forwarding)" != "1" ]; then
 fi
 
 # Flush existing nftables rules to avoid conflicts
-if [ $(echo "$(nft list ruleset)" | wc -l) -ge 2 ]; then
+if [ "$(nft list ruleset | wc -l)" -ge 2 ]; then
     echo "Flushing existing nftables rules..."
     sudo nft flush ruleset # Clear all existing rules in nftables
 fi
@@ -65,7 +65,6 @@ WIREGUARD_INTERFACE="wg0"                                                       
 WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                                # Name of the nftables table for WireGuard rules
 NETWORK_INTERFACE="enxb827eb7c4fab"                                                                # Outgoing network interface used for masquerading traffic (e.g., eth0)
 WIREGUARD_VPN_PORT="51820"                                                                         # Default WireGuard VPN traffic port
-WIREGUARD_DNS_PORT="53"                                                                            # DNS port used for VPN (UDP and TCP)
 WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                                 # IPv4 subnet used by the WireGuard VPN for client NAT
 WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                   # IPv6 subnet used by the WireGuard VPN for client NAT
 WIREGUARD_HOST_IPV4="10.0.0.1"                                                                     # IPv4 address of the WireGuard server
@@ -77,15 +76,15 @@ PRIVATE_LOCAL_IPV6_SUBNET="fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32" 
 sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create an nftables table to manage firewall rules for the WireGuard VPN
 
 # --- PREROUTING CHAIN (NAT rules before routing) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING { type nat hook prerouting priority dstnat \; policy accept \; } # Define a PREROUTING chain to apply NAT rules before packet routing
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING "{ type nat hook prerouting priority dstnat ; policy accept ; }" # Define a PREROUTING chain to apply NAT rules before packet routing
 
 # --- INPUT CHAIN (Filtering input traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT { type filter hook input priority filter \; policy accept \; }                       # Create an INPUT chain to filter incoming packets
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT "{ type filter hook input priority filter ; policy accept ; }"                       # Create an INPUT chain to filter incoming packets
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} accept                 # Allow UDP packets targeting the WireGuard port on the incoming interface
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} accept # Allow IPv6 UDP packets targeting the WireGuard port on the incoming interface
 
 # --- FORWARD CHAIN (Filtering forwarded traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD { type filter hook forward priority filter \; policy accept \; }                                                                                              # Create a FORWARD chain to manage packets routed through the VPN
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD "{ type filter hook forward priority filter ; policy accept ; }"                                                                                              # Create a FORWARD chain to manage packets routed through the VPN
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8 } log prefix "VPN_DROP_IPv4_LOCAL " drop # Drop IPv4 packets from private subnets within the VPN subnet
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr { fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32 } log prefix "VPN_DROP_IPv6_LOCAL " drop                  # Drop IPv6 packets from private subnets within the VPN subnet
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept                                                                                # Allow packets with WireGuard IPv4 source not destined for the server
@@ -94,12 +93,12 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_I
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" log prefix "VPN_DROP_IPv6_OTHER " drop                                              # Log and drop IPv6 packets from the WireGuard subnet not destined for the server
 
 # --- OUTPUT CHAIN (Filtering output traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT { type filter hook output priority filter \; policy accept \; } # Create an OUTPUT chain to filter packets generated by the server
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }" # Create an OUTPUT chain to manage outgoing packets
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                            # Drop outgoing packets with invalid connection tracking state
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established accept                              # Allow outgoing packets related to established connections
 
 # --- POSTROUTING CHAIN (NAT rules after routing) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING { type nat hook postrouting priority srcnat \; policy accept \; }             # Define a POSTROUTING chain to apply NAT rules after routing
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING "{ type nat hook postrouting priority srcnat ; policy accept ; }"             # Define a POSTROUTING chain to apply NAT rules after packet routing
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip saddr "${WIREGUARD_IPv4_SUBNET}" masquerade  # Apply NAT masquerading to outgoing IPv4 traffic
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip6 saddr "${WIREGUARD_IPv6_SUBNET}" masquerade # Apply NAT masquerading to outgoing IPv6 traffic
 
