@@ -112,5 +112,8 @@ sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING "{ type nat hook p
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING ip saddr "${WIREGUARD_IPv4_SUBNET}" oifname "${NETWORK_INTERFACE}" masquerade  # Apply NAT (masquerading) to IPv4 packets from VPN clients when forwarded to the internet
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING ip6 saddr "${WIREGUARD_IPv6_SUBNET}" oifname "${NETWORK_INTERFACE}" masquerade # Apply NAT (masquerading) to IPv6 packets from VPN clients when forwarded to the internet
 
+# View the nftables ruleset to verify the configuration
+nft list ruleset
+
 # View all the blocked logs.
 # journalctl -f
