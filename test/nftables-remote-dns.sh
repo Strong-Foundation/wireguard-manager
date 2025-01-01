@@ -92,6 +92,7 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state invalid drop  
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state related,established accept                                                                                      # Allow forwarding of packets that are part of established or related connections
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept                                          # Allow packets with WireGuard IPv4 source not destined for the server
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept                                        # Allow packets with WireGuard IPv6 source not destined for the server
+
 # --- OUTPUT CHAIN (Filtering output traffic) ---
 sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }" # Create an OUTPUT chain to manage outgoing packets
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                            # Drop outgoing packets with invalid connection tracking state
