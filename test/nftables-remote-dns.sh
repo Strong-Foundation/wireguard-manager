@@ -5,17 +5,23 @@
 # It ensures that the necessary packages are installed, IP forwarding is enabled,
 # and secure nftables rules are created for NAT, DNS, and firewall filtering.
 
+# Function to check if your script is running in a GitHub Actions environment
+function is-running-inside-github-action() {
+    # Check if the script is running inside a GitHub Actions environment
+    if [ -z "$GITHUB_REPOSITORY" ]; then
+        # If the GITHUB_REPOSITORY variable is not set, it is not a GitHub Actions environment
+        echo "GitHub Actions environment not detected."
+        echo "This script is meant to be run in a GitHub Actions workflow."
+        exit 1 # Exit with error since this script is meant for GitHub Actions
+    else
+        # If GITHUB_REPOSITORY is set, confirm the environment and display the repository name
+        echo "GitHub Actions environment detected."
+        echo "GitHub Repo: ${GITHUB_REPOSITORY}"
+    fi
+}
+
 # Check if the script is running inside a GitHub Actions environment
-if [ -z "$GITHUB_REPOSITORY" ]; then
-    # If the GITHUB_REPOSITORY variable is not set, it is not a GitHub Actions environment
-    echo "GitHub Actions environment not detected."
-    echo "This script is meant to be run in a GitHub Actions workflow."
-    exit 1 # Exit with error since this script is meant for GitHub Actions
-else
-    # If GITHUB_REPOSITORY is set, confirm the environment and display the repository name
-    echo "GitHub Actions environment detected."
-    echo "GitHub Repo: ${GITHUB_REPOSITORY}"
-fi
+is-running-inside-github-action
 
 # Ensure `sudo` is installed on the system
 if [ ! -x "$(command -v sudo)" ]; then
