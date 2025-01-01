@@ -43,13 +43,13 @@ fi
 echo "Checking IP forwarding settings..."
 
 # Check and enable IPv4 forwarding if not already enabled
-if [ "$(cat /proc/sys/net/ipv4/ip_forward)" != "1" ]; then
+if [ "$(sudo cat /proc/sys/net/ipv4/ip_forward)" != "1" ]; then
     echo "IPv4 forwarding is disabled. Enabling now..."
     sudo sysctl -w net.ipv4.ip_forward=1 # Enable IPv4 forwarding at runtime
 fi
 
 # Check and enable IPv6 forwarding if not already enabled
-if [ "$(cat /proc/sys/net/ipv6/conf/all/forwarding)" != "1" ]; then
+if [ "$(sudo cat /proc/sys/net/ipv6/conf/all/forwarding)" != "1" ]; then
     echo "IPv6 forwarding is disabled. Enabling now..."
     sudo sysctl -w net.ipv6.conf.all.forwarding=1 # Enable IPv6 forwarding at runtime
 fi
