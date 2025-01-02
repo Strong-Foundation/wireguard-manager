@@ -44,6 +44,13 @@ if [ ! -x "$(command -v cat)" ]; then
     sudo apt-get install -y coreutils # Install coreutils if not already present
 fi
 
+# Ensure 'ip' command is installed (part of iproute2 package)
+if [ ! -x "$(command -v ip)" ]; then
+    echo "Installing 'iproute2'..."
+    sudo apt-get update              # Update the system's package list
+    sudo apt-get install -y iproute2 # Install iproute2 package if not already present
+fi
+
 # Check and enable IPv4 forwarding if not already enabled
 if [ "$(sudo cat /proc/sys/net/ipv4/ip_forward)" != "1" ]; then
     echo "IPv4 forwarding is disabled. Enabling now..."
