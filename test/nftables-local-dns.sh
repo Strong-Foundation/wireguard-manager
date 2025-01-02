@@ -63,15 +63,17 @@ if [ "$(sudo nft list ruleset 2>/dev/null | wc -l)" -ge 2 ]; then
 fi
 
 # --- Define variables for interfaces, subnets, and ports ---
-WIREGUARD_INTERFACE="wg0"                                                                        # Name of the WireGuard interface for managing VPN traffic
-WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                              # Name of the nftables table dedicated to WireGuard traffic
-NETWORK_INTERFACE="$(ip route | grep default | head --lines=1 | cut --delimiter=" " --fields=5)" # Default network interface (e.g., eth0) for routing internet-bound traffic
-WIREGUARD_VPN_PORT="51820"                                                                       # Default UDP port for WireGuard VPN communication
-WIREGUARD_DNS_PORT="53"                                                                          # DNS port for both UDP and TCP traffic (commonly used for DNS queries)
-WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                               # IPv4 subnet for VPN clients to route their traffic through
-WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                 # IPv6 subnet for VPN clients to route their traffic through
-WIREGUARD_HOST_IPV4="10.0.0.1"                                                                   # IPv4 address of the WireGuard server (used by clients for routing)
-WIREGUARD_HOST_IPV6="fd00::1"                                                                    # IPv6 address of the WireGuard server (used by clients for routing)
+WIREGUARD_INTERFACE="wg0"                                                                          # Name of the WireGuard interface for managing VPN traffic
+WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                                # Name of the nftables table dedicated to WireGuard traffic
+NETWORK_INTERFACE="$(ip route | grep default | head --lines=1 | cut --delimiter=" " --fields=5)"   # Default network interface (e.g., eth0) for routing internet-bound traffic
+WIREGUARD_VPN_PORT="51820"                                                                         # Default UDP port for WireGuard VPN communication
+WIREGUARD_DNS_PORT="53"                                                                            # DNS port for both UDP and TCP traffic (commonly used for DNS queries)
+WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                                 # IPv4 subnet for VPN clients to route their traffic through
+WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                   # IPv6 subnet for VPN clients to route their traffic through
+WIREGUARD_HOST_IPV4="10.0.0.1"                                                                     # IPv4 address of the WireGuard server (used by clients for routing)
+WIREGUARD_HOST_IPV6="fd00::1"                                                                      # IPv6 address of the WireGuard server (used by clients for routing)
+PRIVATE_LOCAL_IPV4_SUBNET="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 127.0.0.0/8" # List of private IPv4 subnets to block for additional security
+PRIVATE_LOCAL_IPV6_SUBNET="fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32"                    # List of private IPv6 subnets to block for additional security
 
 # --- Create a nftables table for WireGuard VPN server ---
 sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create a new nftables table specific to the WireGuard interface to manage VPN-related rules

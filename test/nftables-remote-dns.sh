@@ -75,16 +75,16 @@ PRIVATE_LOCAL_IPV4_SUBNET="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.
 PRIVATE_LOCAL_IPV6_SUBNET="fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32"                    # List of private IPv6 subnets to block for additional security
 
 # --- Create nftables table for WireGuard VPN server ---
-sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create an nftables table to manage firewall rules for the WireGuard VPN
+sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create a new nftables table specific to the WireGuard interface to manage VPN-related rules
 
 # --- PREROUTING CHAIN (NAT rules before routing) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING "{ type nat hook prerouting priority dstnat ; policy accept ; }" # Define a PREROUTING chain to apply NAT rules before packet routing
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING "{ type nat hook prerouting priority dstnat ; policy accept ; }" # Handle packets before routing, typically for destination NAT
 
 # --- INPUT CHAIN (Filtering input traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT "{ type filter hook input priority filter ; policy accept ; }"                       # Create an INPUT chain to filter incoming packets
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ct state invalid drop                                                                 # Drop packets with an invalid connection tracking state to maintain security
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} accept                 # Allow UDP packets targeting the WireGuard port on the incoming interface
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} accept # Allow IPv6 UDP packets targeting the WireGuard port on the incoming interface
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT "{ type filter hook input priority filter ; policy accept ; }"                                                                         # Handle packets arriving at the WireGuard server, default accept policy
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ct state invalid log prefix "DROP_INVALID_INPUT_STATE" drop                                                                             # Drop packets in an invalid connection state (e.g., malformed or attack traffic)
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} log prefix "ACCEPT_INPUT_WIREGUARD_PORT_UDP" accept                      # Accept incoming UDP packets on the WireGuard port from the default network interface
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} log prefix "ACCEPT_INPUT_WIREGUARD_PORT_IPV6_UDP" accept # Accept incoming IPv6 UDP packets on the WireGuard port
 
 # --- FORWARD CHAIN (Filtering forwarded traffic) ---
 sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD "{ type filter hook forward priority filter ; policy accept ; }"                 # Create a FORWARD chain to manage packets routed through the VPN
