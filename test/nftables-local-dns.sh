@@ -117,8 +117,5 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING ip6 saddr "${WIREGU
 # View the nftables ruleset to verify the configuration
 sudo nft list ruleset
 
-# View the nftables ruleset to verify the configuration
-sudo nft list ruleset
-
 # View all the blocked logs.
 # journalctl -f
