@@ -62,57 +62,57 @@ if [ "$(sudo nft list ruleset 2>/dev/null | wc -l)" -ge 2 ]; then
     sudo nft flush ruleset # Clear all existing rules in nftables
 fi
 
-# Define variables for interfaces, subnets, and ports
-WIREGUARD_INTERFACE="wg0"                                                                        # WireGuard interface name, identifying the VPN interface for traffic routing
-WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                              # Name of the nftables table where all WireGuard-related rules are stored
-NETWORK_INTERFACE="$(ip route | grep default | head --lines=1 | cut --delimiter=" " --fields=5)" # Get the default network interface (e.g., eth0) for internet-bound traffic masquerading
-WIREGUARD_VPN_PORT="51820"                                                                       # UDP port used for WireGuard VPN communication (default WireGuard port)
-WIREGUARD_DNS_PORT="53"                                                                          # Port used for DNS traffic (UDP and TCP) from VPN clients
-WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                               # IPv4 subnet assigned to VPN clients for NAT and routing
-WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                 # IPv6 subnet assigned to VPN clients for NAT and routing
-WIREGUARD_HOST_IPV4="10.0.0.1"                                                                   # IPv4 address of the WireGuard server (private IP for VPN clients)
-WIREGUARD_HOST_IPV6="fd00::1"                                                                    # IPv6 address of the WireGuard server (private IP for VPN clients)
+# --- Define variables for interfaces, subnets, and ports ---
+WIREGUARD_INTERFACE="wg0"                                                                        # Name of the WireGuard interface for managing VPN traffic
+WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                              # Name of the nftables table dedicated to WireGuard traffic
+NETWORK_INTERFACE="$(ip route | grep default | head --lines=1 | cut --delimiter=" " --fields=5)" # Default network interface (e.g., eth0) for routing internet-bound traffic
+WIREGUARD_VPN_PORT="51820"                                                                       # Default UDP port for WireGuard VPN communication
+WIREGUARD_DNS_PORT="53"                                                                          # DNS port for both UDP and TCP traffic (commonly used for DNS queries)
+WIREGUARD_IPv4_SUBNET="10.0.0.0/8"                                                               # IPv4 subnet for VPN clients to route their traffic through
+WIREGUARD_IPv6_SUBNET="fd00::/8"                                                                 # IPv6 subnet for VPN clients to route their traffic through
+WIREGUARD_HOST_IPV4="10.0.0.1"                                                                   # IPv4 address of the WireGuard server (used by clients for routing)
+WIREGUARD_HOST_IPV6="fd00::1"                                                                    # IPv6 address of the WireGuard server (used by clients for routing)
 
-# --- Create nftables table for WireGuard VPN server ---
-sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create a new nftables table named after the WireGuard interface for managing VPN traffic rules
+# --- Create a nftables table for WireGuard VPN server ---
+sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create a new nftables table specific to the WireGuard interface to manage VPN-related rules
 
-# --- PREROUTING CHAIN (NAT rules before routing) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING "{ type nat hook prerouting priority dstnat ; policy accept ; }" # PREROUTING chain processes incoming packets before routing, typically for destination NAT (e.g., forwarding requests)
+# --- PREROUTING CHAIN (NAT before routing) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING "{ type nat hook prerouting priority dstnat ; policy accept ; }" # Handle packets before routing, typically for destination NAT
 
-# --- INPUT CHAIN (Filtering input traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT "{ type filter hook input priority filter ; policy accept ; }"                                                    # INPUT chain processes packets addressed to the server, policy is initially set to accept
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ct state invalid log prefix "DROP_INVALID_INPUT_STATE" drop                                                        # Drop packets with an invalid connection tracking state to maintain security
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} log prefix "ACCEPT_INPUT_WIREGUARD_PORT_UDP" accept # Allow incoming UDP packets on WireGuard VPN port from the specified network interface
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} accept                              # Allow incoming IPv6 UDP packets on WireGuard VPN port from the specified network interface
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ip saddr "${WIREGUARD_IPv4_SUBNET}" udp dport "${WIREGUARD_DNS_PORT}" ip daddr "${WIREGUARD_HOST_IPV4}" accept     # Allow IPv4 DNS queries (UDP) from VPN clients to the WireGuard server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ip6 saddr "${WIREGUARD_IPv6_SUBNET}" udp dport "${WIREGUARD_DNS_PORT}" ip6 daddr "${WIREGUARD_HOST_IPV6}" accept   # Allow IPv6 DNS queries (UDP) from VPN clients to the WireGuard server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ip saddr "${WIREGUARD_IPv4_SUBNET}" tcp dport "${WIREGUARD_DNS_PORT}" ip daddr "${WIREGUARD_HOST_IPV4}" accept     # Allow IPv4 DNS queries (TCP) from VPN clients to the WireGuard server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ip6 saddr "${WIREGUARD_IPv6_SUBNET}" tcp dport "${WIREGUARD_DNS_PORT}" ip6 daddr "${WIREGUARD_HOST_IPV6}" accept   # Allow IPv6 DNS queries (TCP) from VPN clients to the WireGuard server
+# --- INPUT CHAIN (Filter incoming traffic to the server) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT "{ type filter hook input priority filter ; policy accept ; }"                                                                                               # Handle packets arriving at the WireGuard server, default accept policy
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ct state invalid log prefix "DROP_INVALID_INPUT_STATE" drop                                                                                                   # Drop packets in an invalid connection state (e.g., malformed or attack traffic)
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} log prefix "ACCEPT_INPUT_WIREGUARD_PORT_UDP" accept                                            # Accept incoming UDP packets on the WireGuard port from the default network interface
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} log prefix "ACCEPT_INPUT_WIREGUARD_PORT_IPV6_UDP" accept                       # Accept incoming IPv6 UDP packets on the WireGuard port
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ip saddr "${WIREGUARD_IPv4_SUBNET}" udp dport "${WIREGUARD_DNS_PORT}" ip daddr "${WIREGUARD_HOST_IPV4}" log prefix "ACCEPT_INPUT_DNS_QUERY_IPV4_UDP" accept   # Accept IPv4 DNS queries (UDP) from VPN clients to the WireGuard server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ip6 saddr "${WIREGUARD_IPv6_SUBNET}" udp dport "${WIREGUARD_DNS_PORT}" ip6 daddr "${WIREGUARD_HOST_IPV6}" log prefix "ACCEPT_INPUT_DNS_QUERY_IPV6_UDP" accept # Accept IPv6 DNS queries (UDP) from VPN clients to the WireGuard server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ip saddr "${WIREGUARD_IPv4_SUBNET}" tcp dport "${WIREGUARD_DNS_PORT}" ip daddr "${WIREGUARD_HOST_IPV4}" log prefix "ACCEPT_INPUT_DNS_QUERY_IPV4_TCP" accept   # Accept IPv4 DNS queries (TCP) from VPN clients to the WireGuard server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ip6 saddr "${WIREGUARD_IPv6_SUBNET}" tcp dport "${WIREGUARD_DNS_PORT}" ip6 daddr "${WIREGUARD_HOST_IPV6}" log prefix "ACCEPT_INPUT_DNS_QUERY_IPV6_TCP" accept # Accept IPv6 DNS queries (TCP) from VPN clients to the WireGuard server
 
-# --- FORWARD CHAIN (Filtering forwarded traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD "{ type filter hook forward priority filter ; policy accept ; }"                                                # FORWARD chain processes packets routed through the server, policy set to accept initially
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state invalid drop                                                                                            # Drop forwarded packets with an invalid connection tracking state
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state related,established accept                                                                              # Allow forwarding of packets that are part of established or related connections
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" udp dport "${WIREGUARD_DNS_PORT}" ip daddr "${WIREGUARD_HOST_IPV4}" accept   # Forward IPv4 DNS queries (UDP) from VPN clients to the WireGuard server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" udp dport "${WIREGUARD_DNS_PORT}" ip6 daddr "${WIREGUARD_HOST_IPV6}" accept # Forward IPv6 DNS queries (UDP) from VPN clients to the WireGuard server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" tcp dport "${WIREGUARD_DNS_PORT}" ip daddr "${WIREGUARD_HOST_IPV4}" accept   # Forward IPv4 DNS queries (TCP) from VPN clients to the WireGuard server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" tcp dport "${WIREGUARD_DNS_PORT}" ip6 daddr "${WIREGUARD_HOST_IPV6}" accept # Forward IPv6 DNS queries (TCP) from VPN clients to the WireGuard server
+# --- FORWARD CHAIN (Filter forwarded traffic) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD "{ type filter hook forward priority filter ; policy accept ; }"                                                                                               # Handle packets being forwarded through the WireGuard server, default accept policy
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state invalid log prefix "DROP_INVALID_FORWARDED_PACKETS" drop                                                                                               # Drop packets with an invalid connection tracking state that are being forwarded
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state related,established log prefix "ACCEPT_RELATED_ESTABLISHED_FORWARD" accept                                                                             # Accept packets related to or part of established connections
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" udp dport "${WIREGUARD_DNS_PORT}" ip daddr "${WIREGUARD_HOST_IPV4}" log prefix "ACCEPT_FORWARD_DNS_QUERY_IPV4_UDP" accept   # Forward IPv4 DNS queries (UDP) from VPN clients to the WireGuard server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" udp dport "${WIREGUARD_DNS_PORT}" ip6 daddr "${WIREGUARD_HOST_IPV6}" log prefix "ACCEPT_FORWARD_DNS_QUERY_IPV6_UDP" accept # Forward IPv6 DNS queries (UDP) from VPN clients to the WireGuard server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" tcp dport "${WIREGUARD_DNS_PORT}" ip daddr "${WIREGUARD_HOST_IPV4}" log prefix "ACCEPT_FORWARD_DNS_QUERY_IPV4_TCP" accept   # Forward IPv4 DNS queries (TCP) from VPN clients to the WireGuard server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" tcp dport "${WIREGUARD_DNS_PORT}" ip6 daddr "${WIREGUARD_HOST_IPV6}" log prefix "ACCEPT_FORWARD_DNS_QUERY_IPV6_TCP" accept # Forward IPv6 DNS queries (TCP) from VPN clients to the WireGuard server
 
-# --- OUTPUT CHAIN (Filtering output traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }"              # OUTPUT chain processes packets generated by the server, policy set to accept initially
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                                         # Drop outgoing packets with an invalid connection tracking state
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established accept                                           # Allow outgoing packets that are part of established or related connections
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip daddr "${WIREGUARD_IPv4_SUBNET}" udp sport "${WIREGUARD_DNS_PORT}" accept  # Allow server-generated DNS queries (UDP) to clients in the IPv4 subnet
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${WIREGUARD_IPv6_SUBNET}" udp sport "${WIREGUARD_DNS_PORT}" accept # Allow server-generated DNS queries (UDP) to clients in the IPv6 subnet
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip daddr "${WIREGUARD_IPv4_SUBNET}" tcp sport "${WIREGUARD_DNS_PORT}" accept  # Allow server-generated DNS queries (TCP) to clients in the IPv4 subnet
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${WIREGUARD_IPv6_SUBNET}" tcp sport "${WIREGUARD_DNS_PORT}" accept # Allow server-generated DNS queries (TCP) to clients in the IPv6 subnet
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip daddr "${WIREGUARD_HOST_IPV4}" udp sport "${WIREGUARD_DNS_PORT}" accept    # Allow outgoing DNS queries (UDP) to the WireGuard server's IPv4 address
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${WIREGUARD_HOST_IPV6}" udp sport "${WIREGUARD_DNS_PORT}" accept   # Allow outgoing DNS queries (UDP) to the WireGuard server's IPv6 address
+# --- OUTPUT CHAIN (Filter outgoing traffic from the server) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }"                                                              # Handle packets generated by the WireGuard server, default accept policy
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid log prefix "DROP_INVALID_OUTPUT_STATE" drop                                                                  # Drop outgoing packets with invalid connection states
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established log prefix "ACCEPT_RELATED_ESTABLISHED_OUTPUT" accept                                            # Allow outgoing packets that are part of established or related connections
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip daddr "${WIREGUARD_IPv4_SUBNET}" udp sport "${WIREGUARD_DNS_PORT}" log prefix "ACCEPT_OUTPUT_DNS_QUERY_IPV4_UDP" accept    # Allow server-generated IPv4 DNS queries (UDP) to clients in the IPv4 subnet
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${WIREGUARD_IPv6_SUBNET}" udp sport "${WIREGUARD_DNS_PORT}" log prefix "ACCEPT_OUTPUT_DNS_QUERY_IPV6_UDP" accept   # Allow server-generated IPv6 DNS queries (UDP) to clients in the IPv6 subnet
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip daddr "${WIREGUARD_IPv4_SUBNET}" tcp sport "${WIREGUARD_DNS_PORT}" log prefix "ACCEPT_OUTPUT_DNS_QUERY_IPV4_TCP" accept    # Allow server-generated IPv4 DNS queries (TCP) to clients in the IPv4 subnet
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${WIREGUARD_IPv6_SUBNET}" tcp sport "${WIREGUARD_DNS_PORT}" log prefix "ACCEPT_OUTPUT_DNS_QUERY_IPV6_TCP" accept   # Allow server-generated IPv6 DNS queries (TCP) to clients in the IPv6 subnet
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip daddr "${WIREGUARD_HOST_IPV4}" udp sport "${WIREGUARD_DNS_PORT}" log prefix "ACCEPT_OUTPUT_DNS_TO_SERVER_IPV4_UDP" accept  # Allow outgoing DNS queries (UDP) to the WireGuard server's IPv4 address
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ip6 daddr "${WIREGUARD_HOST_IPV6}" udp sport "${WIREGUARD_DNS_PORT}" log prefix "ACCEPT_OUTPUT_DNS_TO_SERVER_IPV6_UDP" accept # Allow outgoing DNS queries (UDP) to the WireGuard server's IPv6 address
 
-# --- POSTROUTING CHAIN (NAT rules after routing) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING "{ type nat hook postrouting priority srcnat ; policy accept ; }"             # POSTROUTING chain processes packets after routing, typically for source NAT (masquerading)
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING ip saddr "${WIREGUARD_IPv4_SUBNET}" oifname "${NETWORK_INTERFACE}" masquerade  # Apply NAT (masquerading) to IPv4 packets from VPN clients when forwarded to the internet
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING ip6 saddr "${WIREGUARD_IPv6_SUBNET}" oifname "${NETWORK_INTERFACE}" masquerade # Apply NAT (masquerading) to IPv6 packets from VPN clients when forwarded to the internet
+# --- POSTROUTING CHAIN (NAT after routing) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING "{ type nat hook postrouting priority srcnat ; policy accept ; }"                                                      # Handle packets after routing, typically for source NAT (masquerading)
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING ip saddr "${WIREGUARD_IPv4_SUBNET}" oifname "${NETWORK_INTERFACE}" log prefix "MASQUERADE_VPN_IPV4_TRAFFIC" masquerade  # Masquerade IPv4 packets from VPN clients when routing them to the internet
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING ip6 saddr "${WIREGUARD_IPv6_SUBNET}" oifname "${NETWORK_INTERFACE}" log prefix "MASQUERADE_VPN_IPV6_TRAFFIC" masquerade # Masquerade IPv6 packets from VPN clients when routing them to the internet
 
 # View the nftables ruleset to verify the configuration
 sudo nft list ruleset
