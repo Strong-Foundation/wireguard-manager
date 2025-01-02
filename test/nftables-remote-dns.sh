@@ -101,9 +101,9 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_I
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept   # Allow packets with WireGuard IPv6 source not destined for the server
 
 # --- OUTPUT CHAIN (Filtering output traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }" # Create an OUTPUT chain to manage outgoing packets
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                            # Drop outgoing packets with invalid connection tracking state
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established accept                              # Allow outgoing packets related to established connections
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }"                   # Create an OUTPUT chain to manage outgoing packets
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid log prefix "DROP_INVALID_OUTPUT_STATE" drop                       # Drop outgoing packets with invalid connection states
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established log prefix "ACCEPT_RELATED_ESTABLISHED_OUTPUT" accept # Allow outgoing packets that are part of established or related connections
 
 # --- POSTROUTING CHAIN (NAT rules after routing) ---
 sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING "{ type nat hook postrouting priority srcnat ; policy accept ; }"             # Define a POSTROUTING chain to apply NAT rules after packet routing
