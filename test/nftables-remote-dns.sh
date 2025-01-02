@@ -94,11 +94,11 @@ sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERF
 sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} log prefix "ACCEPT_INPUT_WIREGUARD_PORT_IPV6_UDP" accept # Accept incoming IPv6 UDP packets on the WireGuard port
 
 # --- FORWARD CHAIN (Filtering forwarded traffic) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD "{ type filter hook forward priority filter ; policy accept ; }"                 # Create a FORWARD chain to manage packets routed through the VPN
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state invalid drop                                                             # Drop forwarded packets with an invalid connection tracking state
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state related,established accept                                               # Allow forwarding of packets that are part of established or related connections
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept   # Allow packets with WireGuard IPv4 source not destined for the server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept # Allow packets with WireGuard IPv6 source not destined for the server
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD "{ type filter hook forward priority filter ; policy accept ; }"                   # Create a FORWARD chain to manage packets routed through the VPN
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state invalid log prefix "DROP_INVALID_FORWARDED_PACKETS" drop                   # Drop packets with an invalid connection tracking state that are being forwarded
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state related,established log prefix "ACCEPT_RELATED_ESTABLISHED_FORWARD" accept # Accept packets related to or part of established connections
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept     # Allow packets with WireGuard IPv4 source not destined for the server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept   # Allow packets with WireGuard IPv6 source not destined for the server
 
 # --- OUTPUT CHAIN (Filtering output traffic) ---
 sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }" # Create an OUTPUT chain to manage outgoing packets
