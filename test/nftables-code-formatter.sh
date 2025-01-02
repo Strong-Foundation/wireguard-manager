@@ -1,5 +1,56 @@
 #!/bin/bash
 
+# WireGuard and nftables Configuration Script
+# This script configures nftables rules to work with a WireGuard VPN server.
+# It ensures that the necessary packages are installed, IP forwarding is enabled,
+# and secure nftables rules are created for NAT, DNS, and firewall filtering.
+
+# Function to check if your script is running in a GitHub Actions environment
+function is-running-inside-github-action() {
+    # Check if the script is running inside a GitHub Actions environment
+    if [ -z "$GITHUB_REPOSITORY" ]; then
+        # If the GITHUB_REPOSITORY variable is not set, it is not a GitHub Actions environment
+        echo "GitHub Actions environment not detected."
+        echo "This script is meant to be run in a GitHub Actions workflow."
+        exit 1 # Exit with error since this script is meant for GitHub Actions
+    else
+        # If GITHUB_REPOSITORY is set, confirm the environment and display the repository name
+        echo "GitHub Actions environment detected."
+        echo "GitHub Repo: ${GITHUB_REPOSITORY}"
+    fi
+}
+
+# Check if the script is running inside a GitHub Actions environment
+# is-running-inside-github-action
+
+# Ensure `sudo` is installed on the system
+if [ ! -x "$(command -v sudo)" ]; then
+    echo "Installing 'sudo'..."
+    sudo apt-get update          # Update the system's package list to get the latest metadata
+    sudo apt-get install -y sudo # Install sudo if not already present
+fi
+
+# Ensure `nftables` is installed
+if [ ! -x "$(command -v nft)" ]; then
+    echo "Installing 'nftables'..."
+    sudo apt-get update              # Update the system's package list
+    sudo apt-get install -y nftables # Install nftables if not already present
+fi
+
+# Ensure `coreutils` is installed (provides `cat` command)
+if [ ! -x "$(command -v cat)" ]; then
+    echo "Installing 'coreutils'..."
+    sudo apt-get update               # Update the system's package list
+    sudo apt-get install -y coreutils # Install coreutils if not already present
+fi
+
+# Ensure 'ip' command is installed (part of iproute2 package)
+if [ ! -x "$(command -v ip)" ]; then
+    echo "Installing 'iproute2'..."
+    sudo apt-get update              # Update the system's package list
+    sudo apt-get install -y iproute2 # Install iproute2 package if not already present
+fi
+
 # --- Define variables for interfaces, subnets, and ports ---
 WIREGUARD_INTERFACE="wg0"                                                                          # Name of the WireGuard interface for managing VPN traffic
 WIREGUARD_TABLE_NAME="${WIREGUARD_INTERFACE}-table"                                                # Name of the nftables table dedicated to WireGuard traffic
