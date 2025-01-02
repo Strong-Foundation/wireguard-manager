@@ -75,33 +75,33 @@ PRIVATE_LOCAL_IPV4_SUBNET="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.
 PRIVATE_LOCAL_IPV6_SUBNET="fc00::/7, fec0::/10, ::1/128, ::/128, 2001:db8::/32"                    # List of private IPv6 subnets to block for additional security
 
 # --- Create nftables table for WireGuard VPN server ---
-sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create a new nftables table for WireGuard rules
+sudo nft add table inet "${WIREGUARD_TABLE_NAME}" # Create an nftables table to manage firewall rules for the WireGuard VPN
 
-# --- PREROUTING CHAIN (NAT rules applied before routing decisions) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING "{ type nat hook prerouting priority dstnat ; policy accept ; }" # Define a PREROUTING chain to handle NAT rules before routing decisions
+# --- PREROUTING CHAIN (NAT rules before routing) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" PREROUTING "{ type nat hook prerouting priority dstnat ; policy accept ; }" # Define a PREROUTING chain to apply NAT rules before packet routing
 
-# --- INPUT CHAIN (Filter incoming traffic to the host) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT "{ type filter hook input priority filter ; policy accept ; }"                                                              # Define an INPUT chain to filter incoming packets
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ct state invalid log prefix "INPUT_DROP_INVALID" drop                                                                        # Drop incoming packets with an invalid connection state and log them
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} log prefix "INPUT_ACCEPT_WG_PORT_IPv4" accept                 # Accept and log IPv4 UDP packets targeting the WireGuard port
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} log prefix "INPUT_ACCEPT_WG_PORT_IPv6" accept # Accept and log IPv6 UDP packets targeting the WireGuard port
+# --- INPUT CHAIN (Filtering input traffic) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" INPUT "{ type filter hook input priority filter ; policy accept ; }"                       # Create an INPUT chain to filter incoming packets
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT ct state invalid drop                                                                 # Drop packets with an invalid connection tracking state to maintain security
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" udp dport ${WIREGUARD_VPN_PORT} accept                 # Allow UDP packets targeting the WireGuard port on the incoming interface
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" INPUT iifname "${NETWORK_INTERFACE}" ip6 nexthdr udp udp dport ${WIREGUARD_VPN_PORT} accept # Allow IPv6 UDP packets targeting the WireGuard port on the incoming interface
 
-# --- FORWARD CHAIN (Filter traffic routed through the VPN) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD "{ type filter hook forward priority filter ; policy accept ; }"                                                     # Define a FORWARD chain to manage routed packets
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state invalid log prefix "FORWARD_DROP_INVALID" drop                                                               # Drop forwarded packets with an invalid connection state and log them
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state related,established log prefix "FORWARD_ACCEPT_ESTABLISHED" accept                                           # Accept and log packets that are part of established or related connections
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" log prefix "FORWARD_ACCEPT_WG_IPv4" accept   # Accept and log IPv4 packets from the VPN subnet not destined for the server
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" log prefix "FORWARD_ACCEPT_WG_IPv6" accept # Accept and log IPv6 packets from the VPN subnet not destined for the server
+# --- FORWARD CHAIN (Filtering forwarded traffic) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" FORWARD "{ type filter hook forward priority filter ; policy accept ; }"                 # Create a FORWARD chain to manage packets routed through the VPN
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state invalid drop                                                             # Drop forwarded packets with an invalid connection tracking state
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ct state related,established accept                                               # Allow forwarding of packets that are part of established or related connections
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip saddr "${WIREGUARD_IPv4_SUBNET}" ip daddr != "${WIREGUARD_HOST_IPV4}" accept   # Allow packets with WireGuard IPv4 source not destined for the server
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" FORWARD ip6 saddr "${WIREGUARD_IPv6_SUBNET}" ip6 daddr != "${WIREGUARD_HOST_IPV6}" accept # Allow packets with WireGuard IPv6 source not destined for the server
 
-# --- OUTPUT CHAIN (Filter outgoing traffic from the host) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }"           # Define an OUTPUT chain to filter outgoing packets
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid log prefix "OUTPUT_DROP_INVALID" drop                     # Drop outgoing packets with an invalid connection state and log them
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established log prefix "OUTPUT_ACCEPT_ESTABLISHED" accept # Accept and log outgoing packets that are part of established or related connections
+# --- OUTPUT CHAIN (Filtering output traffic) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" OUTPUT "{ type filter hook output priority filter ; policy accept ; }" # Create an OUTPUT chain to manage outgoing packets
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state invalid drop                                            # Drop outgoing packets with invalid connection tracking state
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" OUTPUT ct state related,established accept                              # Allow outgoing packets related to established connections
 
-# --- POSTROUTING CHAIN (NAT rules applied after routing decisions) ---
-sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING "{ type nat hook postrouting priority srcnat ; policy accept ; }"                                                # Define a POSTROUTING chain to handle NAT rules after routing
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip saddr "${WIREGUARD_IPv4_SUBNET}" log prefix "POSTROUTING_MASQ_IPv4" masquerade  # Apply NAT masquerading for outgoing IPv4 traffic and log it
-sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip6 saddr "${WIREGUARD_IPv6_SUBNET}" log prefix "POSTROUTING_MASQ_IPv6" masquerade # Apply NAT masquerading for outgoing IPv6 traffic and log it
+# --- POSTROUTING CHAIN (NAT rules after routing) ---
+sudo nft add chain inet "${WIREGUARD_TABLE_NAME}" POSTROUTING "{ type nat hook postrouting priority srcnat ; policy accept ; }"             # Define a POSTROUTING chain to apply NAT rules after packet routing
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip saddr "${WIREGUARD_IPv4_SUBNET}" masquerade  # Apply NAT masquerading to outgoing IPv4 traffic
+sudo nft add rule inet "${WIREGUARD_TABLE_NAME}" POSTROUTING oifname "${NETWORK_INTERFACE}" ip6 saddr "${WIREGUARD_IPv6_SUBNET}" masquerade # Apply NAT masquerading to outgoing IPv6 traffic
 
 # View the nftables ruleset to verify the configuration
 sudo nft list ruleset
