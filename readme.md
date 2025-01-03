@@ -41,6 +41,40 @@ Welcome to WireGuard-Manager, your solution for setting up WireGuard, a cutting-
 - **Project License**: Our work is under the Apache 2.0 License:
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/complexorganizations/wireguard-manager/blob/main/license.md)
 
+## 📢 Support
+
+We understand that setting up and managing a WireGuard VPN can sometimes be challenging, especially if you’re new to Linux or networking. That’s why we’re here to help!
+
+### 💬 Join Our Discord Community
+
+For support, guidance, or just to chat with like-minded individuals, join our friendly Discord server:  
+[**Join us on Discord**](https://discord.gg/WwNCxCcE)
+
+#### What You Can Expect
+
+Our Discord is the go-to place for:
+
+- **Quick Assistance**: Get real-time help for any issues related to WireGuard or Linux.
+- **Expert Advice**: Receive tips and recommendations from experienced users and developers.
+- **Learning Opportunities**: Expand your knowledge of Linux, VPNs, and networking.
+- **Community Support**: Engage with a welcoming community that’s eager to help.
+
+#### Topics We Cover
+
+- Troubleshooting WireGuard setup and configurations.
+- Optimizing VPN performance and security.
+- Learning the basics (and advanced aspects) of Linux.
+- Understanding networking concepts and practices.
+
+Whether you’re stuck on a command, confused by a configuration, or just need advice, our team and community are here for you.
+
+### 🛠 How to Reach Us
+
+- **Discord**: [**Click here to join**](https://discord.gg/WwNCxCcE)
+- **Open an Issue**: If your question is specific to this project, consider opening an issue directly in this repository.
+
+We’re committed to making sure you have the support you need to succeed with WireGuard and Linux!
+
 ## ✊ Show Your Support
 
 If you've found this project useful, please consider giving it a star and forking it. Your support is greatly appreciated!
@@ -155,21 +189,21 @@ In your `/etc/wireguard/clients` directory, you will find `.conf` files. These a
 
 ```md
 usage: bash /usr/local/bin/wireguard-manager.sh # --install
-  --install     Installs the WireGuard interface on your system
-  --start       Starts the WireGuard interface if it's not already running
-  --stop        Stops the WireGuard interface if it's currently running
-  --restart     Restarts the WireGuard interface
-  --list        Lists all the peers currently connected to the WireGuard interface
-  --add         Adds a new peer to the WireGuard interface
-  --remove      Removes a specified peer from the WireGuard interface
-  --reinstall   Reinstalls the WireGuard interface, keeping the current configuration
-  --uninstall   Uninstalls the WireGuard interface from your system
-  --update      Updates the WireGuard Manager to the latest version
-  --ddns        Updates the IP address of the WireGuard interface using Dynamic DNS
-  --backup      Creates a backup of your current WireGuard configuration
-  --restore     Restores the WireGuard configuration from a previous backup
-  --purge       Removes all peers from the WireGuard interface
-  --help        Displays this usage guide
+--install Installs the WireGuard interface on your system
+--start Starts the WireGuard interface if it's not already running
+--stop Stops the WireGuard interface if it's currently running
+--restart Restarts the WireGuard interface
+--list Lists all the peers currently connected to the WireGuard interface
+--add Adds a new peer to the WireGuard interface
+--remove Removes a specified peer from the WireGuard interface
+--reinstall Reinstalls the WireGuard interface, keeping the current configuration
+--uninstall Uninstalls the WireGuard interface from your system
+--update Updates the WireGuard Manager to the latest version
+--ddns Updates the IP address of the WireGuard interface using Dynamic DNS
+--backup Creates a backup of your current WireGuard configuration
+--restore Restores the WireGuard configuration from a previous backup
+--purge Removes all peers from the WireGuard interface
+--help Displays this usage guide
 ```
 
 ## 🥰 Features
@@ -457,7 +491,7 @@ This project is made possible thanks to the Open Source Community.
 
 ## 📱 Community and Contributions
 
-Join our community on [![Discord](https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/assets/images/icons/discord.svg)](https://discord.gg/CdjBYMScMS) and [![Slack](https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/assets/images/icons/slack.svg)](https://join.slack.com/t/complexorgani-w5b4873/shared_invite/zt-2e9gz2wh2-dWuylZLgaEgFywNKF_iQRQ) to contribute to the project, share ideas, and get help.
+Join our community on [![Discord](https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/assets/images/icons/discord.svg)](https://discord.gg/WwNCxCcE) to contribute to the project, share ideas, and get help.
 
 ## 🤝 Sponsors
 
