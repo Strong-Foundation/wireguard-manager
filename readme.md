@@ -115,10 +115,7 @@ WireGuard is a straightforward yet fast and modern VPN that utilizes state-of-th
 
 ## Installation Guide
 
-<video width="640" height="360" controls>
-  <source src="https://github.com/Strong-Foundation/wireguard-manager/raw/refs/heads/main/assets/WireGuard_Manager_Install.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+[![Watch the YouTube Video](https://img.youtube.com/vi/inRir_AGsKQ/0.jpg)](https://youtu.be/inRir_AGsKQ)
 
 ## 🐧 Installation
 
@@ -402,10 +399,7 @@ This section compares the internet speed differences between using no VPN, WireG
 
 ## 🙅 Content-Blocking vs. No Content-Blocking
 
-<video width="640" height="360" controls>
-  <source src="https://github.com/Strong-Foundation/wireguard-manager/raw/refs/heads/main/assets/WireGuard_Ad_Blocker_vs_No_Ad_Blocker.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+[![Watch the YouTube Short](https://img.youtube.com/vi/GHD7Et2_3ho/0.jpg)](https://youtube.com/shorts/GHD7Et2_3ho)
 
 ## 📐 Architecture
 
