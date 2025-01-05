@@ -1373,6 +1373,649 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${CLIENT_NAME}"-${WIRE
 # After WireGuard Install
 else
 
+  # Function to display the WireGuard configuration
+  function display-wireguard-config() {
+    wg show ${WIREGUARD_PUB_NIC}
+  }
+
+  # Function to initiate the WireGuard service
+  function initiate-wireguard-service() {
+    wg-quick up ${WIREGUARD_PUB_NIC}
+  }
+
+  # Function to terminate the WireGuard service
+  function terminate-wireguard-service() {
+    wg-quick down ${WIREGUARD_PUB_NIC}
+  }
+
+  # Function to restart the WireGuard service
+  function restart-wireguard-service() {
+    wg-quick down ${WIREGUARD_PUB_NIC}
+    wg-quick up ${WIREGUARD_PUB_NIC}
+  }
+
+  # Function to ad a new user to wireguard
+  function add-wireguard-peer() {
+    # Adding a new peer to WireGuard
+    # If a client name isn't supplied, the script will request one
+    if [ -z "${NEW_CLIENT_NAME}" ]; then
+      echo "Let's name the WireGuard Peer. Use one word only, no special characters, no spaces."
+      read -rp "New client peer:" -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
+    fi
+    # If no client name is provided, use openssl to generate a random name
+    if [ -z "${NEW_CLIENT_NAME}" ]; then
+      NEW_CLIENT_NAME="$(openssl rand -hex 5)"
+    fi
+    # Extract the last IPv4 address used in the WireGuard configuration file
+    LASTIPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | tail --lines=1)
+    # Extract the last IPv6 address used in the WireGuard configuration file
+    LASTIPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="," --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5 | tail --lines=1)
+    # If no IPv4 and IPv6 addresses are found in the configuration file, set the initial values to 1
+    if { [ -z "${LASTIPV4}" ] && [ -z "${LASTIPV6}" ]; }; then
+      LASTIPV4=1
+      LASTIPV6=1
+    fi
+    # Find the smallest used IPv4 address in the WireGuard configuration file
+    SMALLEST_USED_IPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | sort --numeric-sort | head --lines=1)
+    # Find the largest used IPv4 address in the WireGuard configuration file
+    LARGEST_USED_IPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | sort --numeric-sort | tail --lines=1)
+    # Create a list of used IPv4 addresses in the WireGuard configuration file
+    USED_IPV4_LIST=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | sort --numeric-sort)
+    # Loop through IPv4 addresses and find an unused one
+    while [ "${SMALLEST_USED_IPV4}" -le "${LARGEST_USED_IPV4}" ]; do
+      if [[ ! ${USED_IPV4_LIST[*]} =~ ${SMALLEST_USED_IPV4} ]]; then
+        FIND_UNUSED_IPV4=${SMALLEST_USED_IPV4}
+        break
+      fi
+      SMALLEST_USED_IPV4=$((SMALLEST_USED_IPV4 + 1))
+    done
+    # Find the smallest used IPv6 address in the WireGuard configuration file
+    SMALLEST_USED_IPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="," --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5 | sort --numeric-sort | head --lines=1)
+    # Find the largest used IPv6 address in the WireGuard configuration file
+    LARGEST_USED_IPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="," --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5 | sort --numeric-sort | tail --lines=1)
+    # Create a list of used IPv6 addresses in the WireGuard configuration file
+    USED_IPV6_LIST=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="," --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5 | sort --numeric-sort)
+    # Loop through IPv6 addresses and find an unused one
+    while [ "${SMALLEST_USED_IPV6}" -le "${LARGEST_USED_IPV6}" ]; do
+      if [[ ! ${USED_IPV6_LIST[*]} =~ ${SMALLEST_USED_IPV6} ]]; then
+        FIND_UNUSED_IPV6=${SMALLEST_USED_IPV6}
+        break
+      fi
+      SMALLEST_USED_IPV6=$((SMALLEST_USED_IPV6 + 1))
+    done
+    # If unused IPv4 and IPv6 addresses are found, set them as the last IPv4 and IPv6 addresses
+    if { [ -n "${FIND_UNUSED_IPV4}" ] && [ -n "${FIND_UNUSED_IPV6}" ]; }; then
+      LASTIPV4=$(echo "${FIND_UNUSED_IPV4}" | head --lines=1)
+      LASTIPV6=$(echo "${FIND_UNUSED_IPV6}" | head --lines=1)
+    fi
+    if { [ "${LASTIPV4}" -ge 255 ] && [ "${LASTIPV6}" -ge 255 ]; }; then
+      # Get the current IPv4 and IPv6 ranges from the WireGuard config file
+      CURRENT_IPV4_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
+      CURRENT_IPV6_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3)
+      # Get the last octet of the IPv4 range and the fifth hextet of the IPv6 range
+      IPV4_BEFORE_BACKSLASH=$(echo "${CURRENT_IPV4_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4)
+      IPV6_BEFORE_BACKSLASH=$(echo "${CURRENT_IPV6_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5)
+      # Get the second octet of the IPv4 range and the second hextet of the IPv6 range
+      IPV4_AFTER_FIRST=$(echo "${CURRENT_IPV4_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=2)
+      IPV6_AFTER_FIRST=$(echo "${CURRENT_IPV6_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=2)
+      # Get the second and third octets of the IPv4 range and the third and fourth hextets of the IPv6 range
+      SECOND_IPV4_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=2)
+      SECOND_IPV6_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=2)
+      THIRD_IPV4_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=3)
+      THIRD_IPV6_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=3)
+      # Calculate the next IPv4 and IPv6 ranges
+      NEXT_IPV4_RANGE=$((THIRD_IPV4_IN_RANGE + 1))
+      NEXT_IPV6_RANGE=$((THIRD_IPV6_IN_RANGE + 1))
+      # Get the CIDR notation for the current IPv4 and IPv6 ranges
+      CURRENT_IPV4_RANGE_CIDR=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2 | cut --delimiter="/" --fields=2)
+      CURRENT_IPV6_RANGE_CIDR=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=2)
+      FINAL_IPV4_RANGE=$(echo "${CURRENT_IPV4_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=1,2)".${NEXT_IPV4_RANGE}.${IPV4_BEFORE_BACKSLASH}/${CURRENT_IPV4_RANGE_CIDR}"
+      FINAL_IPV6_RANGE=$(echo "${CURRENT_IPV6_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=1,2)":${NEXT_IPV6_RANGE}::${IPV6_BEFORE_BACKSLASH}/${CURRENT_IPV6_RANGE_CIDR}"
+      if { [ "${THIRD_IPV4_IN_RANGE}" -ge 255 ] && [ "${THIRD_IPV6_IN_RANGE}" -ge 255 ]; }; then
+        if { [ "${SECOND_IPV4_IN_RANGE}" -ge 255 ] && [ "${SECOND_IPV6_IN_RANGE}" -ge 255 ] && [ "${THIRD_IPV4_IN_RANGE}" -ge 255 ] && [ "${THIRD_IPV6_IN_RANGE}" -ge 255 ] && [ "${LASTIPV4}" -ge 255 ] && [ "${LASTIPV6}" -ge 255 ]; }; then
+          # If all IP ranges are at their maximum value, then exit with an error message
+          echo "Error: You are unable to add any more peers."
+          exit
+        fi
+        # Calculate the next IPv4 and IPv6 ranges
+        NEXT_IPV4_RANGE=$((SECOND_IPV4_IN_RANGE + 1))
+        NEXT_IPV6_RANGE=$((SECOND_IPV6_IN_RANGE + 1))
+        # Calculate the final IPv4 and IPv6 ranges
+        FINAL_IPV4_RANGE=$(echo "${CURRENT_IPV4_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=1)".${NEXT_IPV4_RANGE}.${IPV4_AFTER_FIRST}.${IPV4_BEFORE_BACKSLASH}/${CURRENT_IPV4_RANGE_CIDR}"
+        FINAL_IPV6_RANGE=$(echo "${CURRENT_IPV6_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=1)":${NEXT_IPV6_RANGE}:${IPV6_AFTER_FIRST}::${IPV6_BEFORE_BACKSLASH}/${CURRENT_IPV6_RANGE_CIDR}"
+      fi
+      # Replace the current IPv4 and IPv6 ranges with the final IPv4 and IPv6 ranges in the WireGuard config file
+      sed --in-place "1s|${CURRENT_IPV4_RANGE}|${FINAL_IPV4_RANGE}|" ${WIREGUARD_CONFIG}
+      sed --in-place "1s|${CURRENT_IPV6_RANGE}|${FINAL_IPV6_RANGE}|" ${WIREGUARD_CONFIG}
+      # Set LASTIPV4 and LASTIPV6 to their maximum values to indicate that no more peers can be added
+      LASTIPV4=1
+      LASTIPV6=1
+    fi
+    # Generate a private key for the client
+    CLIENT_PRIVKEY=$(wg genkey)
+    # Derive the public key from the private key
+    CLIENT_PUBKEY=$(echo "${CLIENT_PRIVKEY}" | wg pubkey)
+    # Generate a preshared key for the client and server to use
+    PRESHARED_KEY=$(wg genpsk)
+    # Choose a random port number for the peer
+    PEER_PORT=$(shuf --input-range=1024-65535 --head-count=1)
+    # Get the private subnet and subnet mask from the WireGuard config file
+    PRIVATE_SUBNET_V4=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
+    PRIVATE_SUBNET_MASK_V4=$(echo "${PRIVATE_SUBNET_V4}" | cut --delimiter="/" --fields=2)
+    PRIVATE_SUBNET_V6=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3)
+    PRIVATE_SUBNET_MASK_V6=$(echo "${PRIVATE_SUBNET_V6}" | cut --delimiter="/" --fields=2)
+    # Get the server host and public key from the WireGuard config file
+    SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4)
+    SERVER_PUBKEY=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=5)
+    # Get the client DNS server, MTU choice, NAT choice, and allowed IP address from the WireGuard config file
+    CLIENT_DNS=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=6)
+    MTU_CHOICE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=7)
+    NAT_CHOICE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=8)
+    CLIENT_ALLOWED_IP=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=9)
+    # Calculate the client's IP addresses based on the last IP addresses used
+    CLIENT_ADDRESS_V4=$(echo "${PRIVATE_SUBNET_V4}" | cut --delimiter="." --fields=1-3).$((LASTIPV4 + 1))
+    CLIENT_ADDRESS_V6=$(echo "${PRIVATE_SUBNET_V6}" | cut --delimiter=":" --fields=1-4):$((LASTIPV6 + 1))
+    # Check if there are any unused IP addresses available
+    if { [ -n "${FIND_UNUSED_IPV4}" ] && [ -n "${FIND_UNUSED_IPV6}" ]; }; then
+      CLIENT_ADDRESS_V4=$(echo "${CLIENT_ADDRESS_V4}" | cut --delimiter="." --fields=1-3).${LASTIPV4}
+      CLIENT_ADDRESS_V6=$(echo "${CLIENT_ADDRESS_V6}" | cut --delimiter=":" --fields=1-4):${LASTIPV6}
+    fi
+    # Create a temporary file to store the new client information
+    WIREGUARD_TEMP_NEW_CLIENT_INFO="# ${NEW_CLIENT_NAME} start
+[Peer]
+PublicKey = ${CLIENT_PUBKEY}
+PresharedKey = ${PRESHARED_KEY}
+AllowedIPs = ${CLIENT_ADDRESS_V4}/32,${CLIENT_ADDRESS_V6}/128
+# ${NEW_CLIENT_NAME} end"
+    # Write the temporary new client information to the 'add peer' configuration file
+    echo "${WIREGUARD_TEMP_NEW_CLIENT_INFO}" >${WIREGUARD_ADD_PEER_CONFIG}
+    # Add the new peer configuration to the WireGuard interface
+    wg addconf ${WIREGUARD_PUB_NIC} ${WIREGUARD_ADD_PEER_CONFIG}
+    # If there are no unused IPv4 and IPv6 addresses, append the new client information to the WireGuard configuration file
+    if { [ -z "${FIND_UNUSED_IPV4}" ] && [ -z "${FIND_UNUSED_IPV6}" ]; }; then
+      echo "${WIREGUARD_TEMP_NEW_CLIENT_INFO}" >>${WIREGUARD_CONFIG}
+    # If there are unused IPv4 and IPv6 addresses, modify the 'add peer' configuration file and insert the new client information into the WireGuard configuration file
+    elif { [ -n "${FIND_UNUSED_IPV4}" ] && [ -n "${FIND_UNUSED_IPV6}" ]; }; then
+      sed --in-place "s|$|\\\n|" "${WIREGUARD_ADD_PEER_CONFIG}"
+      sed --in-place "6s|\\\n||" "${WIREGUARD_ADD_PEER_CONFIG}"
+      # Remove newline characters from the 'add peer' configuration file
+      WIREGUARD_TEMPORARY_PEER_DATA=$(tr --delete "\n" <"${WIREGUARD_ADD_PEER_CONFIG}")
+      # Calculate the line number where the new client information should be inserted
+      TEMP_WRITE_LINE=$((LASTIPV4 - 2))
+      # Insert the new client information into the WireGuard configuration file
+      sed --in-place $((TEMP_WRITE_LINE * 6 + 11))i"${WIREGUARD_TEMPORARY_PEER_DATA}" ${WIREGUARD_CONFIG}
+    fi
+    # Remove the wireguard add peer config file
+    rm --force ${WIREGUARD_ADD_PEER_CONFIG}
+    # Create the client configuration file
+    echo "# ${WIREGUARD_WEBSITE_URL}
+[Interface]
+Address = ${CLIENT_ADDRESS_V4}/${PRIVATE_SUBNET_MASK_V4},${CLIENT_ADDRESS_V6}/${PRIVATE_SUBNET_MASK_V6}
+DNS = ${CLIENT_DNS}
+ListenPort = ${PEER_PORT}
+MTU = ${MTU_CHOICE}
+PrivateKey = ${CLIENT_PRIVKEY}
+[Peer]
+AllowedIPs = ${CLIENT_ALLOWED_IP}
+Endpoint = ${SERVER_HOST}
+PersistentKeepalive = ${NAT_CHOICE}
+PresharedKey = ${PRESHARED_KEY}
+PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
+    # Add the WireGuard interface configuration, stripping any unnecessary fields
+    wg addconf ${WIREGUARD_PUB_NIC} <(wg-quick strip ${WIREGUARD_PUB_NIC})
+    # Check if automatic WireGuard expiration is enabled, and if so, set the expiration date
+    if crontab -l | grep -q "${CURRENT_FILE_PATH} --remove"; then
+      crontab -l | {
+        cat
+        # Add a new cron job to remove the new client at the specified expiration date
+        echo "$(date +%M) $(date +%H) $(date +%d) $(date +%m) * echo -e \"${NEW_CLIENT_NAME}\" | ${CURRENT_FILE_PATH} --remove"
+      } | crontab -
+    fi
+    # Generate and display a QR code for the new client configuration
+    qrencode -t ansiutf8 <${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
+    # Output the new client configuration file content
+    cat ${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
+    # Display the path of the new client configuration file
+    echo "Client config --> ${WIREGUARD_CLIENT_PATH}/${NEW_CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
+  }
+
+  # Function to remove a WireGuard peer
+  function remove-wireguard-peer() {
+    # Remove WireGuard Peer
+    # Prompt the user to choose a WireGuard peer to remove
+    echo "Which WireGuard peer would you like to remove?"
+    # List all the peers' names in the WireGuard configuration file
+    grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2
+    # Read the user input for the peer's name
+    read -rp "Peer's name:" REMOVECLIENT
+    # Extract the public key of the selected peer from the configuration file
+    CLIENTKEY=$(sed -n "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/p" ${WIREGUARD_CONFIG} | grep PublicKey | cut --delimiter=" " --fields=3)
+    # Remove the selected peer from the WireGuard interface using the extracted public key
+    wg set ${WIREGUARD_PUB_NIC} peer "${CLIENTKEY}" remove
+    # Remove the selected peer's configuration block from the WireGuard configuration file
+    sed --in-place "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/d" ${WIREGUARD_CONFIG}
+    # If the selected peer has a configuration file in the client path, remove it
+    if [ -f "${WIREGUARD_CLIENT_PATH}/${REMOVECLIENT}-${WIREGUARD_PUB_NIC}.conf" ]; then
+      rm --force ${WIREGUARD_CLIENT_PATH}/"${REMOVECLIENT}"-${WIREGUARD_PUB_NIC}.conf
+    fi
+    # Reload the WireGuard interface configuration to apply the changes
+    wg addconf ${WIREGUARD_PUB_NIC} <(wg-quick strip ${WIREGUARD_PUB_NIC})
+    # Remove any cronjobs associated with the removed peer
+    crontab -l | grep --invert-match "${REMOVECLIENT}" | crontab -
+  }
+
+  # Function to reinstall the WireGuard service
+  function reinstall-wireguard() {
+    # Reinstall WireGuard
+    # Check if the current init system is systemd, and if so, disable and stop the WireGuard service
+    if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      systemctl disable --now wg-quick@${WIREGUARD_PUB_NIC}
+    # Check if the current init system is init, and if so, stop the WireGuard service
+    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      service wg-quick@${WIREGUARD_PUB_NIC} stop
+    fi
+    # Bring down the WireGuard interface
+    wg-quick down ${WIREGUARD_PUB_NIC}
+    # Reinstall or update WireGuard based on the current Linux distribution
+    if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
+      dpkg-reconfigure wireguard-dkms
+      modprobe wireguard
+    elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+      yum reinstall wireguard-tools -y
+    elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
+      pacman -Su --noconfirm wireguard-tools
+    elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
+      apk fix wireguard-tools
+    elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
+      pkg check wireguard
+    elif [ "${CURRENT_DISTRO}" == "ol" ]; then
+      yum reinstall wireguard-tools -y
+    fi
+    # Enable and start the WireGuard service based on the current init system
+    if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
+    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      service wg-quick@${WIREGUARD_PUB_NIC} restart
+    fi
+  }
+
+  # Function to uninstall the WireGuard service
+  function uninstall-wireguard() {
+    # Uninstall WireGuard and purging files
+    # Check if the current init system is systemd and disable the WireGuard service
+    if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      systemctl disable --now wg-quick@${WIREGUARD_PUB_NIC}
+      # If the init system is not systemd, check if it is init and stop the WireGuard service
+    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      service wg-quick@${WIREGUARD_PUB_NIC} stop
+    fi
+    # Bring down the WireGuard interface
+    wg-quick down ${WIREGUARD_PUB_NIC}
+    # Removing Wireguard Files
+    # Check if the WireGuard directory exists and remove it
+    if [ -d "${WIREGUARD_PATH}" ]; then
+      rm --recursive --force ${WIREGUARD_PATH}
+    fi
+    # Remove WireGuard and qrencode packages based on the current distribution
+    # For CentOS, AlmaLinux, and Rocky Linux distributions
+    if { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+      yum remove wireguard qrencode -y
+      # For Ubuntu, Debian, Raspbian, Pop!_OS, Kali Linux, Linux Mint, and KDE Neon distributions
+    elif { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
+      apt-get remove --purge wireguard qrencode -y
+      # Remove backports repository and keys if they exist
+      if [ -f "/etc/apt/sources.list.d/backports.list" ]; then
+        rm --force /etc/apt/sources.list.d/backports.list
+        apt-key del 648ACFD622F3D138
+        apt-key del 0E98404D386FA1D9
+      fi
+      # For Arch, Arch ARM, and Manjaro distributions
+    elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
+      pacman -Rs --noconfirm wireguard-tools qrencode
+      # For Fedora distribution
+    elif [ "${CURRENT_DISTRO}" == "fedora" ]; then
+      dnf remove wireguard qrencode -y
+      # Remove WireGuard repository if it exists
+      if [ -f "/etc/yum.repos.d/wireguard.repo" ]; then
+        rm --force /etc/yum.repos.d/wireguard.repo
+      fi
+      # For RHEL distribution
+    elif [ "${CURRENT_DISTRO}" == "rhel" ]; then
+      yum remove wireguard qrencode -y
+      # Remove WireGuard repository if it exists
+      if [ -f "/etc/yum.repos.d/wireguard.repo" ]; then
+        rm --force /etc/yum.repos.d/wireguard.repo
+      fi
+      # For Alpine Linux distribution
+    elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
+      apk del wireguard-tools libqrencode
+      # For FreeBSD distribution
+    elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
+      pkg delete wireguard libqrencode
+    # For Oracle Linux distribution
+    elif [ "${CURRENT_DISTRO}" == "ol" ]; then
+      yum remove wireguard qrencode -y
+    fi
+    # Delete WireGuard backup
+    if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
+      rm --force ${WIREGUARD_CONFIG_BACKUP}
+      if [ -f "${WIREGUARD_BACKUP_PASSWORD_PATH}" ]; then
+        rm --force "${WIREGUARD_BACKUP_PASSWORD_PATH}"
+      fi
+    fi
+    # Uninstall unbound
+    # Check if the 'unbound' command is available on the system
+    if [ -x "$(command -v unbound)" ]; then
+      # Check if the current init system is systemd and disable the Unbound service
+      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+        systemctl disable --now unbound
+      # If the init system is not systemd, check if it is init and stop the Unbound service
+      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+        service unbound stop
+      fi
+      # If a backup of the resolv.conf file exists, restore it and set the immutable flag
+      if [ -f "${RESOLV_CONFIG_OLD}" ]; then
+        chattr -i ${RESOLV_CONFIG}
+        rm --force ${RESOLV_CONFIG}
+        mv ${RESOLV_CONFIG_OLD} ${RESOLV_CONFIG}
+        chattr +i ${RESOLV_CONFIG}
+      fi
+      # Remove Unbound package based on the current distribution
+      # For CentOS, RHEL, AlmaLinux, and Rocky Linux distributions
+      if { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+        yum remove unbound -y
+      # For Ubuntu, Debian, Raspbian, Pop!_OS, Kali Linux, Linux Mint, and KDE Neon distributions
+      elif { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
+        # If the distribution is Ubuntu, restart systemd-resolved service based on the init system
+        if [ "${CURRENT_DISTRO}" == "ubuntu" ]; then
+          if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+            systemctl enable --now systemd-resolved
+          elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+            service systemd-resolved restart
+          fi
+        fi
+        apt-get remove --purge unbound -y
+      # For Arch, Arch ARM, and Manjaro distributions
+      elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
+        pacman -Rs --noconfirm unbound
+      # For Fedora and Oracle Linux distributions
+      elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
+        yum remove unbound -y
+      # For Alpine Linux distribution
+      elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
+        apk del unbound
+      # For FreeBSD distribution
+      elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
+        pkg delete unbound
+      fi
+      # Remove Unbound root directory if it exists
+      if [ -d "${UNBOUND_ROOT}" ]; then
+        rm --recursive --force ${UNBOUND_ROOT}
+      fi
+      # Remove Unbound root anchor file if it exists
+      if [ -f "${UNBOUND_ANCHOR}" ]; then
+        rm --force ${UNBOUND_ANCHOR}
+      fi
+    fi
+    # If any cronjobs are identified, they should be removed.
+    crontab -l | grep --invert-match "${CURRENT_FILE_PATH}" | crontab -
+  }
+
+  # Function to update the WiregGuard Script
+  function update-wireguard-script() {
+    # Update WireGuard Manager script.
+    # Calculate the SHA3-512 hash of the current WireGuard Manager script
+    CURRENT_WIREGUARD_MANAGER_HASH=$(openssl dgst -sha3-512 "${CURRENT_FILE_PATH}" | cut --delimiter=" " --fields=2)
+    # Calculate the SHA3-512 hash of the latest WireGuard Manager script from the remote source
+    NEW_WIREGUARD_MANAGER_HASH=$(curl --silent "${WIREGUARD_MANAGER_UPDATE}" | openssl dgst -sha3-512 | cut --delimiter=" " --fields=2)
+    # If the hashes don't match, update the local WireGuard Manager script
+    if [ "${CURRENT_WIREGUARD_MANAGER_HASH}" != "${NEW_WIREGUARD_MANAGER_HASH}" ]; then
+      curl "${WIREGUARD_MANAGER_UPDATE}" -o "${CURRENT_FILE_PATH}"
+      chmod +x "${CURRENT_FILE_PATH}"
+      echo "Updating WireGuard Manager script..."
+    fi
+    # Update the unbound configs if the unbound command is available on the system
+    if [ -x "$(command -v unbound)" ]; then
+      # Update the unbound root hints file if it exists
+      if [ -f "${UNBOUND_ROOT_HINTS}" ]; then
+        CURRENT_ROOT_HINTS_HASH=$(openssl dgst -sha3-512 "${UNBOUND_ROOT_HINTS}" | cut --delimiter=" " --fields=2)
+        NEW_ROOT_HINTS_HASH=$(curl --silent "${UNBOUND_ROOT_SERVER_CONFIG_URL}" | openssl dgst -sha3-512 | cut --delimiter=" " --fields=2)
+        if [ "${CURRENT_ROOT_HINTS_HASH}" != "${NEW_ROOT_HINTS_HASH}" ]; then
+          curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" -o ${UNBOUND_ROOT_HINTS}
+          echo "Updating root hints file..."
+        fi
+      fi
+      # Update the unbound config host file if it exists
+      if [ -f "${UNBOUND_CONFIG_HOST}" ]; then
+        CURRENT_UNBOUND_HOSTS_HASH=$(openssl dgst -sha3-512 "${UNBOUND_CONFIG_HOST}" | cut --delimiter=" " --fields=2)
+        NEW_UNBOUND_HOSTS_HASH=$(curl --silent "${UNBOUND_CONFIG_HOST_URL}" | awk '{print "local-zone: \""$1"\" always_refuse"}' | openssl dgst -sha3-512 | cut --delimiter=" " --fields=2)
+        if [ "${CURRENT_UNBOUND_HOSTS_HASH}" != "${NEW_UNBOUND_HOSTS_HASH}" ]; then
+          curl "${UNBOUND_CONFIG_HOST_URL}" | awk '{print "local-zone: \""$1"\" always_refuse"}' >${UNBOUND_CONFIG_HOST}
+          echo "Updating unbound config host file..."
+        fi
+      fi
+      # Once everything is completed, restart the unbound service
+      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+        systemctl restart unbound
+        echo "Restarting unbound service..."
+      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+        service unbound restart
+        echo "Restarting unbound service..."
+      fi
+    fi
+  }
+
+  # Function to backup the WireGuard configuration
+  function backup-wireguard-config() {
+    # If the WireGuard config backup file exists, remove it
+    if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
+      rm --force ${WIREGUARD_CONFIG_BACKUP}
+      echo "Removing existing backup..."
+    fi
+    # If the system backup path directory does not exist, create it along with any necessary parent directories
+    if [ ! -d "${SYSTEM_BACKUP_PATH}" ]; then
+      mkdir --parents ${SYSTEM_BACKUP_PATH}
+      echo "Creating backup directory..."
+    fi
+    # If the WireGuard path directory exists, proceed with the backup process
+    if [ -d "${WIREGUARD_PATH}" ]; then
+      # Generate a random 50-character hexadecimal backup password and store it in a file
+      BACKUP_PASSWORD="$(openssl rand -hex 10)"
+      echo "${BACKUP_PASSWORD}" >"${WIREGUARD_BACKUP_PASSWORD_PATH}"
+      # Zip the WireGuard config file using the generated backup password and save it as a backup
+      zip -P "${BACKUP_PASSWORD}" -rj ${WIREGUARD_CONFIG_BACKUP} ${WIREGUARD_CONFIG}
+      # Echo the backup password and path to the terminal
+      echo "Backup Password: ${BACKUP_PASSWORD}"
+      echo "Backup Path: ${WIREGUARD_CONFIG_BACKUP}"
+      echo "Please save the backup password and path in a secure location."
+    fi
+  }
+
+  # Function to restore the WireGuard configuration
+  function restore-wireguard-config() {
+    # Restore WireGuard Config
+    # Check if the WireGuard config backup file does not exist, and if so, exit the script
+    if [ ! -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
+      echo "Error: The WireGuard configuration backup file could not be found. Please ensure it exists and try again."
+      exit
+    fi
+    # Prompt the user to enter the backup password and store it in the WIREGUARD_BACKUP_PASSWORD variable
+    read -rp "Backup Password: " -e -i "$(cat "${WIREGUARD_BACKUP_PASSWORD_PATH}")" WIREGUARD_BACKUP_PASSWORD
+    # If the WIREGUARD_BACKUP_PASSWORD variable is empty, exit the script
+    if [ -z "${WIREGUARD_BACKUP_PASSWORD}" ]; then
+      echo "Error: The backup password field is empty. Please provide a valid password."
+      exit
+    fi
+    # Unzip the backup file, overwriting existing files, using the specified backup password, and extract the contents to the WireGuard path
+    unzip -o -P "${WIREGUARD_BACKUP_PASSWORD}" "${WIREGUARD_CONFIG_BACKUP}" -d "${WIREGUARD_PATH}"
+    # If the current init system is systemd, enable and start the wg-quick service
+    if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+      systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
+    # If the current init system is init, restart the wg-quick service
+    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      service wg-quick@${WIREGUARD_PUB_NIC} restart
+    fi
+  }
+
+  # Function to update the WireGuard interface IP
+  function update-wireguard-interface-ip() {
+    # Change the IP address of your wireguard interface.
+    get-network-information
+    # Extract the current IP address method from the WireGuard config file
+    CURRENT_IP_METHORD=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4)
+    # If the current IP address method is IPv4, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV4
+    if [[ ${CURRENT_IP_METHORD} != *"["* ]]; then
+      OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter=":" --fields=1)
+      NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV4}
+    fi
+    # If the current IP address method is IPv6, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV6
+    if [[ ${CURRENT_IP_METHORD} == *"["* ]]; then
+      OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter="[" --fields=2 | cut --delimiter="]" --fields=1)
+      NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV6}
+    fi
+    # If the old server host is different from the new server host, update the server host in the WireGuard config file
+    if [ "${OLD_SERVER_HOST}" != "${NEW_SERVER_HOST}" ]; then
+      sed --in-place "1s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" ${WIREGUARD_CONFIG}
+    fi
+    # Create a list of existing WireGuard clients from the WireGuard config file
+    COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
+    # Add the clients to the USER_LIST array
+    for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
+      USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
+      ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
+    done
+    # Loop through the clients in the USER_LIST array
+    for CLIENT_NAME in "${USER_LIST[@]}"; do
+      # Check if the client's config file exists
+      if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
+        # Update the server host in the client's config file
+        sed --in-place "s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
+      fi
+    done
+  }
+
+  # Function to update the WireGuard interface port
+  function update-wireguard-interface-port() {
+    # Change the wireguard interface's port number.
+    # Extract the old server port from the WireGuard config file
+    OLD_SERVER_PORT=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter=":" --fields=2)
+    # Prompt the user to enter a valid custom port (between 1 and 65535) and store it in NEW_SERVER_PORT
+    until [[ "${NEW_SERVER_PORT}" =~ ^[0-9]+$ ]] && [ "${NEW_SERVER_PORT}" -ge 1 ] && [ "${NEW_SERVER_PORT}" -le 65535 ]; do
+      read -rp "Enter a custom port number (between 1 and 65535): " -e -i 51820 NEW_SERVER_PORT
+    done
+    # Check if the chosen port is already in use by another application
+    if [ "$(lsof -i UDP:"${NEW_SERVER_PORT}")" ]; then
+      # If the port is in use, print an error message and exit the script
+      echo "Error: The port number ${NEW_SERVER_PORT} is already in use by another application. Please try a different port number."
+      exit
+    fi
+    # If the old server port is different from the new server port, update the server port in the WireGuard config file
+    if [ "${OLD_SERVER_PORT}" != "${NEW_SERVER_PORT}" ]; then
+      sed --in-place "s/${OLD_SERVER_PORT}/${NEW_SERVER_PORT}/g" ${WIREGUARD_CONFIG}
+      echo "The server port has changed from ${OLD_SERVER_PORT} to ${NEW_SERVER_PORT} in ${WIREGUARD_CONFIG}."
+    fi
+    # Create a list of existing WireGuard clients from the WireGuard config file
+    COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
+    # Add the clients to the USER_LIST array
+    for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
+      USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
+      ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
+    done
+    # Loop through the clients in the USER_LIST array
+    for CLIENT_NAME in "${USER_LIST[@]}"; do
+      # Check if the client's config file exists
+      if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
+        # Update the server port in the client's config file
+        sed --in-place "s/${OLD_SERVER_PORT}/${NEW_SERVER_PORT}/" "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
+        echo "The server port has changed from ${OLD_SERVER_PORT} to ${NEW_SERVER_PORT} in ${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf."
+      fi
+    done
+  }
+
+  # Function to purge all WireGuard peers
+  function purge-all-wireguard-peers() {
+    # Remove all the peers from the interface.
+    COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
+    # This line gets the list of clients in the config file by searching for the string "start" and then extracting the second field (the client name) from each line.
+    for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
+      USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
+      ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
+    done
+    # This loop iterates over each client in the list and adds it to an array called USER_LIST.
+    for CLIENT_NAME in "${USER_LIST[@]}"; do
+      CLIENTKEY=$(sed -n "/\# ${CLIENT_NAME} start/,/\# ${CLIENT_NAME} end/p" ${WIREGUARD_CONFIG} | grep PublicKey | cut --delimiter=" " --fields=3)
+      # This line extracts the client's public key from the config file.
+      wg set ${WIREGUARD_PUB_NIC} peer "${CLIENTKEY}" remove
+      # This line removes the client from the server.
+      sed --in-place "/\# ${CLIENT_NAME} start/,/\# ${CLIENT_NAME} end/d" ${WIREGUARD_CONFIG}
+      # This line removes the client's config from the server.
+      if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
+        rm --force ${WIREGUARD_CLIENT_PATH}/"${CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
+      else
+        echo "The client config file for ${CLIENT_NAME} does not exist."
+      fi
+      # This line removes the client's config file from the server.
+      wg addconf ${WIREGUARD_PUB_NIC} <(wg-quick strip ${WIREGUARD_PUB_NIC})
+      # This line removes the client's config from the running server.
+      crontab -l | grep --invert-match "${CLIENT_NAME}" | crontab -
+      # This line removes the client from the cron job.
+    done
+  }
+
+  # Function to generate a QR code for the WireGuard configuration
+  function generate-wireguard-qr-code() {
+    # Generate a QR code for a WireGuard peer.
+    # Print a prompt asking the user to choose a WireGuard peer for generating a QR code
+    echo "Which WireGuard peer would you like to generate a QR code for?"
+    # Extract and display a list of peer names from the WireGuard config file
+    grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2
+    # Prompt the user to enter the desired peer's name and store it in the VIEW_CLIENT_INFO variable
+    read -rp "Enter the name of the peer you want to view information for: " VIEW_CLIENT_INFO
+    # Check if the config file for the specified peer exists
+    if [ -f "${WIREGUARD_CLIENT_PATH}/${VIEW_CLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf" ]; then
+      # Generate a QR code for the specified peer's config file and display it in the terminal
+      qrencode -t ansiutf8 <${WIREGUARD_CLIENT_PATH}/"${VIEW_CLIENT_INFO}"-${WIREGUARD_PUB_NIC}.conf
+      # Print the file path of the specified peer's config file
+      echo "Peer's config --> ${WIREGUARD_CLIENT_PATH}/${VIEW_CLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf"
+    else
+      # If the config file for the specified peer does not exist, print an error message
+      echo "Error: The peer you specified could not be found. Please ensure you've entered the correct information."
+      exit
+    fi
+  }
+
+  # Function to verify the WireGuard configurations
+  function verify-wireguard-configuration() {
+    # Check if the `unbound` command is available on the system by checking if it is executable
+    if [ -x "$(command -v unbound)" ]; then
+      # Check if the output of `unbound-checkconf` run on `UNBOUND_CONFIG` contains "no errors"
+      if [[ "$(unbound-checkconf ${UNBOUND_CONFIG})" != *"no errors"* ]]; then
+        # If "no errors" was not found in output of previous command, print an error message
+        "$(unbound-checkconf ${UNBOUND_CONFIG})"
+        echo "Error: We found an error on your unbound config file located at ${UNBOUND_CONFIG}"
+        exit
+      fi
+      # Check if output of `unbound-host` run on `UNBOUND_CONFIG` with arguments `-C`, `-v`, and `cloudflare.com` contains "secure"
+      if [[ "$(unbound-host -C ${UNBOUND_CONFIG} -v cloudflare.com)" != *"secure"* ]]; then
+        # If "secure" was not found in output of previous command, print an error message
+        "$(unbound-host -C ${UNBOUND_CONFIG} -v cloudflare.com)"
+        echo "Error: We found an error on your unbound DNS-SEC config file loacted at ${UNBOUND_CONFIG}"
+        exit
+      fi
+      echo "Your unbound config file located at ${UNBOUND_CONFIG} is valid."
+    fi
+    # Check if the `wg` command is available on the system by checking if it is executable
+    if [ -x "$(command -v wg)" ]; then
+      # Check if the output of `wg` contains "interface" and "public key"
+      if [[ "$(wg)" != *"interface"* ]] && [[ "$(wg)" != *"public key"* ]]; then
+        # If "interface" and "public key" were not found in output of previous command, print an error message
+        echo "Error: We found an error on your WireGuard interface."
+        exit
+      fi
+      echo "Your WireGuard interface is valid."
+    fi
+  }
+
   # What to do if the software is already installed?
   function wireguard-next-questions-interface() {
     echo "Please select an action:"
@@ -1396,606 +2039,69 @@ else
       read -rp "Select an Option [1-16]:" -e -i 0 WIREGUARD_OPTIONS
     done
     case ${WIREGUARD_OPTIONS} in
-    1) # Display WireGuard configuration
-      wg show ${WIREGUARD_PUB_NIC}
+    1)
+      # Display WireGuard configuration
+      display-wireguard-config
       ;;
-    2) # Initiate WireGuard service
-      wg-quick up ${WIREGUARD_PUB_NIC}
+    2)
+      # Initiate WireGuard service
+      initiate-wireguard-service
       ;;
-    3) # Terminate WireGuard service
-      wg-quick down ${WIREGUARD_PUB_NIC}
+    3)
+      # Terminate WireGuard service
+      terminate-wireguard-service
       ;;
-    4) # Restart the WireGuard service
-      # The script first identifies the init system (either "systemd" or "init")
-      # Then, it restarts the WireGuard service based on the identified init system
-      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-        systemctl restart wg-quick@${WIREGUARD_PUB_NIC}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-        service wg-quick@${WIREGUARD_PUB_NIC} restart
-      fi
+    4)
+      # Restart WireGuard service
+      restart-wireguard-service
       ;;
-    5) # Adding a new peer to WireGuard
-      # If a client name isn't supplied, the script will request one
-      if [ -z "${NEW_CLIENT_NAME}" ]; then
-        echo "Let's name the WireGuard Peer. Use one word only, no special characters, no spaces."
-        read -rp "New client peer:" -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
-      fi
-      # If no client name is provided, use openssl to generate a random name
-      if [ -z "${NEW_CLIENT_NAME}" ]; then
-        NEW_CLIENT_NAME="$(openssl rand -hex 5)"
-      fi
-      # Extract the last IPv4 address used in the WireGuard configuration file
-      LASTIPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | tail --lines=1)
-      # Extract the last IPv6 address used in the WireGuard configuration file
-      LASTIPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="," --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5 | tail --lines=1)
-      # If no IPv4 and IPv6 addresses are found in the configuration file, set the initial values to 1
-      if { [ -z "${LASTIPV4}" ] && [ -z "${LASTIPV6}" ]; }; then
-        LASTIPV4=1
-        LASTIPV6=1
-      fi
-      # Find the smallest used IPv4 address in the WireGuard configuration file
-      SMALLEST_USED_IPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | sort --numeric-sort | head --lines=1)
-      # Find the largest used IPv4 address in the WireGuard configuration file
-      LARGEST_USED_IPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | sort --numeric-sort | tail --lines=1)
-      # Create a list of used IPv4 addresses in the WireGuard configuration file
-      USED_IPV4_LIST=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | sort --numeric-sort)
-      # Loop through IPv4 addresses and find an unused one
-      while [ "${SMALLEST_USED_IPV4}" -le "${LARGEST_USED_IPV4}" ]; do
-        if [[ ! ${USED_IPV4_LIST[*]} =~ ${SMALLEST_USED_IPV4} ]]; then
-          FIND_UNUSED_IPV4=${SMALLEST_USED_IPV4}
-          break
-        fi
-        SMALLEST_USED_IPV4=$((SMALLEST_USED_IPV4 + 1))
-      done
-      # Find the smallest used IPv6 address in the WireGuard configuration file
-      SMALLEST_USED_IPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="," --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5 | sort --numeric-sort | head --lines=1)
-      # Find the largest used IPv6 address in the WireGuard configuration file
-      LARGEST_USED_IPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="," --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5 | sort --numeric-sort | tail --lines=1)
-      # Create a list of used IPv6 addresses in the WireGuard configuration file
-      USED_IPV6_LIST=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="," --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5 | sort --numeric-sort)
-      # Loop through IPv6 addresses and find an unused one
-      while [ "${SMALLEST_USED_IPV6}" -le "${LARGEST_USED_IPV6}" ]; do
-        if [[ ! ${USED_IPV6_LIST[*]} =~ ${SMALLEST_USED_IPV6} ]]; then
-          FIND_UNUSED_IPV6=${SMALLEST_USED_IPV6}
-          break
-        fi
-        SMALLEST_USED_IPV6=$((SMALLEST_USED_IPV6 + 1))
-      done
-      # If unused IPv4 and IPv6 addresses are found, set them as the last IPv4 and IPv6 addresses
-      if { [ -n "${FIND_UNUSED_IPV4}" ] && [ -n "${FIND_UNUSED_IPV6}" ]; }; then
-        LASTIPV4=$(echo "${FIND_UNUSED_IPV4}" | head --lines=1)
-        LASTIPV6=$(echo "${FIND_UNUSED_IPV6}" | head --lines=1)
-      fi
-      if { [ "${LASTIPV4}" -ge 255 ] && [ "${LASTIPV6}" -ge 255 ]; }; then
-        # Get the current IPv4 and IPv6 ranges from the WireGuard config file
-        CURRENT_IPV4_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
-        CURRENT_IPV6_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3)
-        # Get the last octet of the IPv4 range and the fifth hextet of the IPv6 range
-        IPV4_BEFORE_BACKSLASH=$(echo "${CURRENT_IPV4_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4)
-        IPV6_BEFORE_BACKSLASH=$(echo "${CURRENT_IPV6_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=5)
-        # Get the second octet of the IPv4 range and the second hextet of the IPv6 range
-        IPV4_AFTER_FIRST=$(echo "${CURRENT_IPV4_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=2)
-        IPV6_AFTER_FIRST=$(echo "${CURRENT_IPV6_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=2)
-        # Get the second and third octets of the IPv4 range and the third and fourth hextets of the IPv6 range
-        SECOND_IPV4_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=2)
-        SECOND_IPV6_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=2)
-        THIRD_IPV4_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=3)
-        THIRD_IPV6_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=3)
-        # Calculate the next IPv4 and IPv6 ranges
-        NEXT_IPV4_RANGE=$((THIRD_IPV4_IN_RANGE + 1))
-        NEXT_IPV6_RANGE=$((THIRD_IPV6_IN_RANGE + 1))
-        # Get the CIDR notation for the current IPv4 and IPv6 ranges
-        CURRENT_IPV4_RANGE_CIDR=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2 | cut --delimiter="/" --fields=2)
-        CURRENT_IPV6_RANGE_CIDR=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=2)
-        FINAL_IPV4_RANGE=$(echo "${CURRENT_IPV4_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=1,2)".${NEXT_IPV4_RANGE}.${IPV4_BEFORE_BACKSLASH}/${CURRENT_IPV4_RANGE_CIDR}"
-        FINAL_IPV6_RANGE=$(echo "${CURRENT_IPV6_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=1,2)":${NEXT_IPV6_RANGE}::${IPV6_BEFORE_BACKSLASH}/${CURRENT_IPV6_RANGE_CIDR}"
-        if { [ "${THIRD_IPV4_IN_RANGE}" -ge 255 ] && [ "${THIRD_IPV6_IN_RANGE}" -ge 255 ]; }; then
-          if { [ "${SECOND_IPV4_IN_RANGE}" -ge 255 ] && [ "${SECOND_IPV6_IN_RANGE}" -ge 255 ] && [ "${THIRD_IPV4_IN_RANGE}" -ge 255 ] && [ "${THIRD_IPV6_IN_RANGE}" -ge 255 ] && [ "${LASTIPV4}" -ge 255 ] && [ "${LASTIPV6}" -ge 255 ]; }; then
-            # If all IP ranges are at their maximum value, then exit with an error message
-            echo "Error: You are unable to add any more peers."
-            exit
-          fi
-          # Calculate the next IPv4 and IPv6 ranges
-          NEXT_IPV4_RANGE=$((SECOND_IPV4_IN_RANGE + 1))
-          NEXT_IPV6_RANGE=$((SECOND_IPV6_IN_RANGE + 1))
-          # Calculate the final IPv4 and IPv6 ranges
-          FINAL_IPV4_RANGE=$(echo "${CURRENT_IPV4_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=1)".${NEXT_IPV4_RANGE}.${IPV4_AFTER_FIRST}.${IPV4_BEFORE_BACKSLASH}/${CURRENT_IPV4_RANGE_CIDR}"
-          FINAL_IPV6_RANGE=$(echo "${CURRENT_IPV6_RANGE}" | cut --delimiter="/" --fields=1 | cut --delimiter=":" --fields=1)":${NEXT_IPV6_RANGE}:${IPV6_AFTER_FIRST}::${IPV6_BEFORE_BACKSLASH}/${CURRENT_IPV6_RANGE_CIDR}"
-        fi
-        # Replace the current IPv4 and IPv6 ranges with the final IPv4 and IPv6 ranges in the WireGuard config file
-        sed --in-place "1s|${CURRENT_IPV4_RANGE}|${FINAL_IPV4_RANGE}|" ${WIREGUARD_CONFIG}
-        sed --in-place "1s|${CURRENT_IPV6_RANGE}|${FINAL_IPV6_RANGE}|" ${WIREGUARD_CONFIG}
-        # Set LASTIPV4 and LASTIPV6 to their maximum values to indicate that no more peers can be added
-        LASTIPV4=1
-        LASTIPV6=1
-      fi
-      # Generate a private key for the client
-      CLIENT_PRIVKEY=$(wg genkey)
-      # Derive the public key from the private key
-      CLIENT_PUBKEY=$(echo "${CLIENT_PRIVKEY}" | wg pubkey)
-      # Generate a preshared key for the client and server to use
-      PRESHARED_KEY=$(wg genpsk)
-      # Choose a random port number for the peer
-      PEER_PORT=$(shuf --input-range=1024-65535 --head-count=1)
-      # Get the private subnet and subnet mask from the WireGuard config file
-      PRIVATE_SUBNET_V4=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
-      PRIVATE_SUBNET_MASK_V4=$(echo "${PRIVATE_SUBNET_V4}" | cut --delimiter="/" --fields=2)
-      PRIVATE_SUBNET_V6=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3)
-      PRIVATE_SUBNET_MASK_V6=$(echo "${PRIVATE_SUBNET_V6}" | cut --delimiter="/" --fields=2)
-      # Get the server host and public key from the WireGuard config file
-      SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4)
-      SERVER_PUBKEY=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=5)
-      # Get the client DNS server, MTU choice, NAT choice, and allowed IP address from the WireGuard config file
-      CLIENT_DNS=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=6)
-      MTU_CHOICE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=7)
-      NAT_CHOICE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=8)
-      CLIENT_ALLOWED_IP=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=9)
-      # Calculate the client's IP addresses based on the last IP addresses used
-      CLIENT_ADDRESS_V4=$(echo "${PRIVATE_SUBNET_V4}" | cut --delimiter="." --fields=1-3).$((LASTIPV4 + 1))
-      CLIENT_ADDRESS_V6=$(echo "${PRIVATE_SUBNET_V6}" | cut --delimiter=":" --fields=1-4):$((LASTIPV6 + 1))
-      # Check if there are any unused IP addresses available
-      if { [ -n "${FIND_UNUSED_IPV4}" ] && [ -n "${FIND_UNUSED_IPV6}" ]; }; then
-        CLIENT_ADDRESS_V4=$(echo "${CLIENT_ADDRESS_V4}" | cut --delimiter="." --fields=1-3).${LASTIPV4}
-        CLIENT_ADDRESS_V6=$(echo "${CLIENT_ADDRESS_V6}" | cut --delimiter=":" --fields=1-4):${LASTIPV6}
-      fi
-      # Create a temporary file to store the new client information
-      WIREGUARD_TEMP_NEW_CLIENT_INFO="# ${NEW_CLIENT_NAME} start
-[Peer]
-PublicKey = ${CLIENT_PUBKEY}
-PresharedKey = ${PRESHARED_KEY}
-AllowedIPs = ${CLIENT_ADDRESS_V4}/32,${CLIENT_ADDRESS_V6}/128
-# ${NEW_CLIENT_NAME} end"
-      # Write the temporary new client information to the 'add peer' configuration file
-      echo "${WIREGUARD_TEMP_NEW_CLIENT_INFO}" >${WIREGUARD_ADD_PEER_CONFIG}
-      # Add the new peer configuration to the WireGuard interface
-      wg addconf ${WIREGUARD_PUB_NIC} ${WIREGUARD_ADD_PEER_CONFIG}
-      # If there are no unused IPv4 and IPv6 addresses, append the new client information to the WireGuard configuration file
-      if { [ -z "${FIND_UNUSED_IPV4}" ] && [ -z "${FIND_UNUSED_IPV6}" ]; }; then
-        echo "${WIREGUARD_TEMP_NEW_CLIENT_INFO}" >>${WIREGUARD_CONFIG}
-      # If there are unused IPv4 and IPv6 addresses, modify the 'add peer' configuration file and insert the new client information into the WireGuard configuration file
-      elif { [ -n "${FIND_UNUSED_IPV4}" ] && [ -n "${FIND_UNUSED_IPV6}" ]; }; then
-        sed --in-place "s|$|\\\n|" "${WIREGUARD_ADD_PEER_CONFIG}"
-        sed --in-place "6s|\\\n||" "${WIREGUARD_ADD_PEER_CONFIG}"
-        # Remove newline characters from the 'add peer' configuration file
-        WIREGUARD_TEMPORARY_PEER_DATA=$(tr --delete "\n" <"${WIREGUARD_ADD_PEER_CONFIG}")
-        # Calculate the line number where the new client information should be inserted
-        TEMP_WRITE_LINE=$((LASTIPV4 - 2))
-        # Insert the new client information into the WireGuard configuration file
-        sed --in-place $((TEMP_WRITE_LINE * 6 + 11))i"${WIREGUARD_TEMPORARY_PEER_DATA}" ${WIREGUARD_CONFIG}
-      fi
-      # Remove the wireguard add peer config file
-      rm --force ${WIREGUARD_ADD_PEER_CONFIG}
-      # Create the client configuration file
-      echo "# ${WIREGUARD_WEBSITE_URL}
-[Interface]
-Address = ${CLIENT_ADDRESS_V4}/${PRIVATE_SUBNET_MASK_V4},${CLIENT_ADDRESS_V6}/${PRIVATE_SUBNET_MASK_V6}
-DNS = ${CLIENT_DNS}
-ListenPort = ${PEER_PORT}
-MTU = ${MTU_CHOICE}
-PrivateKey = ${CLIENT_PRIVKEY}
-[Peer]
-AllowedIPs = ${CLIENT_ALLOWED_IP}
-Endpoint = ${SERVER_HOST}
-PersistentKeepalive = ${NAT_CHOICE}
-PresharedKey = ${PRESHARED_KEY}
-PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
-      # Add the WireGuard interface configuration, stripping any unnecessary fields
-      wg addconf ${WIREGUARD_PUB_NIC} <(wg-quick strip ${WIREGUARD_PUB_NIC})
-      # Check if automatic WireGuard expiration is enabled, and if so, set the expiration date
-      if crontab -l | grep -q "${CURRENT_FILE_PATH} --remove"; then
-        crontab -l | {
-          cat
-          # Add a new cron job to remove the new client at the specified expiration date
-          echo "$(date +%M) $(date +%H) $(date +%d) $(date +%m) * echo -e \"${NEW_CLIENT_NAME}\" | ${CURRENT_FILE_PATH} --remove"
-        } | crontab -
-      fi
-      # Generate and display a QR code for the new client configuration
-      qrencode -t ansiutf8 <${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
-      # Output the new client configuration file content
-      cat ${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
-      # Display the path of the new client configuration file
-      echo "Client config --> ${WIREGUARD_CLIENT_PATH}/${NEW_CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
+    5)
+      # Add a new WireGuard peer (client)
+      add-wireguard-peer
       ;;
-    6) # Remove WireGuard Peer
-      # Prompt the user to choose a WireGuard peer to remove
-      echo "Which WireGuard peer would you like to remove?"
-      # List all the peers' names in the WireGuard configuration file
-      grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2
-      # Read the user input for the peer's name
-      read -rp "Peer's name:" REMOVECLIENT
-      # Extract the public key of the selected peer from the configuration file
-      CLIENTKEY=$(sed -n "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/p" ${WIREGUARD_CONFIG} | grep PublicKey | cut --delimiter=" " --fields=3)
-      # Remove the selected peer from the WireGuard interface using the extracted public key
-      wg set ${WIREGUARD_PUB_NIC} peer "${CLIENTKEY}" remove
-      # Remove the selected peer's configuration block from the WireGuard configuration file
-      sed --in-place "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/d" ${WIREGUARD_CONFIG}
-      # If the selected peer has a configuration file in the client path, remove it
-      if [ -f "${WIREGUARD_CLIENT_PATH}/${REMOVECLIENT}-${WIREGUARD_PUB_NIC}.conf" ]; then
-        rm --force ${WIREGUARD_CLIENT_PATH}/"${REMOVECLIENT}"-${WIREGUARD_PUB_NIC}.conf
-      fi
-      # Reload the WireGuard interface configuration to apply the changes
-      wg addconf ${WIREGUARD_PUB_NIC} <(wg-quick strip ${WIREGUARD_PUB_NIC})
-      # Remove any cronjobs associated with the removed peer
-      crontab -l | grep --invert-match "${REMOVECLIENT}" | crontab -
+    6)
+      # Remove a WireGuard peer (client)
+      remove-wireguard-peer
       ;;
-    7) # Reinstall WireGuard
-      # Check if the current init system is systemd, and if so, disable and stop the WireGuard service
-      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-        systemctl disable --now wg-quick@${WIREGUARD_PUB_NIC}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-        service wg-quick@${WIREGUARD_PUB_NIC} stop
-      fi
-      # Bring down the WireGuard interface
-      wg-quick down ${WIREGUARD_PUB_NIC}
-      # Reinstall or update WireGuard based on the current Linux distribution
-      if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
-        dpkg-reconfigure wireguard-dkms
-        modprobe wireguard
-      elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
-        yum reinstall wireguard-tools -y
-      elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
-        pacman -Su --noconfirm wireguard-tools
-      elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
-        apk fix wireguard-tools
-      elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
-        pkg check wireguard
-      elif [ "${CURRENT_DISTRO}" == "ol" ]; then
-        yum reinstall wireguard-tools -y
-      fi
-      # Enable and start the WireGuard service based on the current init system
-      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-        systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-        service wg-quick@${WIREGUARD_PUB_NIC} restart
-      fi
+    7)
+      # Reinstall WireGuard service
+      reinstall-wireguard
       ;;
-    8) # Uninstall WireGuard and purging files
-      # Check if the current init system is systemd and disable the WireGuard service
-      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-        systemctl disable --now wg-quick@${WIREGUARD_PUB_NIC}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-        service wg-quick@${WIREGUARD_PUB_NIC} stop
-      fi
-      # Bring down the WireGuard interface
-      wg-quick down ${WIREGUARD_PUB_NIC}
-      # Removing Wireguard Files
-      # Check if the WireGuard directory exists and remove it
-      if [ -d "${WIREGUARD_PATH}" ]; then
-        rm --recursive --force ${WIREGUARD_PATH}
-      fi
-      # Remove WireGuard and qrencode packages based on the current distribution
-      # For CentOS, AlmaLinux, and Rocky Linux distributions
-      if { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
-        yum remove wireguard qrencode -y
-        # For Ubuntu, Debian, Raspbian, Pop!_OS, Kali Linux, Linux Mint, and KDE Neon distributions
-      elif { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
-        apt-get remove --purge wireguard qrencode -y
-        # Remove backports repository and keys if they exist
-        if [ -f "/etc/apt/sources.list.d/backports.list" ]; then
-          rm --force /etc/apt/sources.list.d/backports.list
-          apt-key del 648ACFD622F3D138
-          apt-key del 0E98404D386FA1D9
-        fi
-        # For Arch, Arch ARM, and Manjaro distributions
-      elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
-        pacman -Rs --noconfirm wireguard-tools qrencode
-        # For Fedora distribution
-      elif [ "${CURRENT_DISTRO}" == "fedora" ]; then
-        dnf remove wireguard qrencode -y
-        # Remove WireGuard repository if it exists
-        if [ -f "/etc/yum.repos.d/wireguard.repo" ]; then
-          rm --force /etc/yum.repos.d/wireguard.repo
-        fi
-        # For RHEL distribution
-      elif [ "${CURRENT_DISTRO}" == "rhel" ]; then
-        yum remove wireguard qrencode -y
-        # Remove WireGuard repository if it exists
-        if [ -f "/etc/yum.repos.d/wireguard.repo" ]; then
-          rm --force /etc/yum.repos.d/wireguard.repo
-        fi
-        # For Alpine Linux distribution
-      elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
-        apk del wireguard-tools libqrencode
-        # For FreeBSD distribution
-      elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
-        pkg delete wireguard libqrencode
-      # For Oracle Linux distribution
-      elif [ "${CURRENT_DISTRO}" == "ol" ]; then
-        yum remove wireguard qrencode -y
-      fi
-      # Delete WireGuard backup
-      if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
-        rm --force ${WIREGUARD_CONFIG_BACKUP}
-        if [ -f "${WIREGUARD_BACKUP_PASSWORD_PATH}" ]; then
-          rm --force "${WIREGUARD_BACKUP_PASSWORD_PATH}"
-        fi
-      fi
-      # Uninstall unbound
-      # Check if the 'unbound' command is available on the system
-      if [ -x "$(command -v unbound)" ]; then
-        # Check if the current init system is systemd and disable the Unbound service
-        if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-          systemctl disable --now unbound
-        elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-          service unbound stop
-        fi
-        # If a backup of the resolv.conf file exists, restore it and set the immutable flag
-        if [ -f "${RESOLV_CONFIG_OLD}" ]; then
-          chattr -i ${RESOLV_CONFIG}
-          rm --force ${RESOLV_CONFIG}
-          mv ${RESOLV_CONFIG_OLD} ${RESOLV_CONFIG}
-          chattr +i ${RESOLV_CONFIG}
-        fi
-        # Remove Unbound package based on the current distribution
-        # For CentOS, RHEL, AlmaLinux, and Rocky Linux distributions
-        if { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
-          yum remove unbound -y
-        # For Ubuntu, Debian, Raspbian, Pop!_OS, Kali Linux, Linux Mint, and KDE Neon distributions
-        elif { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
-          # If the distribution is Ubuntu, restart systemd-resolved service based on the init system
-          if [ "${CURRENT_DISTRO}" == "ubuntu" ]; then
-            if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-              systemctl enable --now systemd-resolved
-            elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-              service systemd-resolved restart
-            fi
-          fi
-          apt-get remove --purge unbound -y
-        # For Arch, Arch ARM, and Manjaro distributions
-        elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
-          pacman -Rs --noconfirm unbound
-        # For Fedora and Oracle Linux distributions
-        elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
-          yum remove unbound -y
-        # For Alpine Linux distribution
-        elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
-          apk del unbound
-        # For FreeBSD distribution
-        elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
-          pkg delete unbound
-        fi
-        # Remove Unbound root directory if it exists
-        if [ -d "${UNBOUND_ROOT}" ]; then
-          rm --recursive --force ${UNBOUND_ROOT}
-        fi
-        # Remove Unbound root anchor file if it exists
-        if [ -f "${UNBOUND_ANCHOR}" ]; then
-          rm --force ${UNBOUND_ANCHOR}
-        fi
-      fi
-      # If any cronjobs are identified, they should be removed.
-      crontab -l | grep --invert-match "${CURRENT_FILE_PATH}" | crontab -
+    8)
+      # Uninstall WireGuard service
+      uninstall-wireguard
       ;;
-    9) # Update WireGuard Manager script.
-      # Calculate the SHA3-512 hash of the current WireGuard Manager script
-      CURRENT_WIREGUARD_MANAGER_HASH=$(openssl dgst -sha3-512 "${CURRENT_FILE_PATH}" | cut --delimiter=" " --fields=2)
-      # Calculate the SHA3-512 hash of the latest WireGuard Manager script from the remote source
-      NEW_WIREGUARD_MANAGER_HASH=$(curl --silent "${WIREGUARD_MANAGER_UPDATE}" | openssl dgst -sha3-512 | cut --delimiter=" " --fields=2)
-      # If the hashes don't match, update the local WireGuard Manager script
-      if [ "${CURRENT_WIREGUARD_MANAGER_HASH}" != "${NEW_WIREGUARD_MANAGER_HASH}" ]; then
-        curl "${WIREGUARD_MANAGER_UPDATE}" -o "${CURRENT_FILE_PATH}"
-        chmod +x "${CURRENT_FILE_PATH}"
-        echo "Updating WireGuard Manager script..."
-      fi
-      # Update the unbound configs if the unbound command is available on the system
-      if [ -x "$(command -v unbound)" ]; then
-        # Update the unbound root hints file if it exists
-        if [ -f "${UNBOUND_ROOT_HINTS}" ]; then
-          CURRENT_ROOT_HINTS_HASH=$(openssl dgst -sha3-512 "${UNBOUND_ROOT_HINTS}" | cut --delimiter=" " --fields=2)
-          NEW_ROOT_HINTS_HASH=$(curl --silent "${UNBOUND_ROOT_SERVER_CONFIG_URL}" | openssl dgst -sha3-512 | cut --delimiter=" " --fields=2)
-          if [ "${CURRENT_ROOT_HINTS_HASH}" != "${NEW_ROOT_HINTS_HASH}" ]; then
-            curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" -o ${UNBOUND_ROOT_HINTS}
-            echo "Updating root hints file..."
-          fi
-        fi
-        # Update the unbound config host file if it exists
-        if [ -f "${UNBOUND_CONFIG_HOST}" ]; then
-          CURRENT_UNBOUND_HOSTS_HASH=$(openssl dgst -sha3-512 "${UNBOUND_CONFIG_HOST}" | cut --delimiter=" " --fields=2)
-          NEW_UNBOUND_HOSTS_HASH=$(curl --silent "${UNBOUND_CONFIG_HOST_URL}" | awk '{print "local-zone: \""$1"\" always_refuse"}' | openssl dgst -sha3-512 | cut --delimiter=" " --fields=2)
-          if [ "${CURRENT_UNBOUND_HOSTS_HASH}" != "${NEW_UNBOUND_HOSTS_HASH}" ]; then
-            curl "${UNBOUND_CONFIG_HOST_URL}" | awk '{print "local-zone: \""$1"\" always_refuse"}' >${UNBOUND_CONFIG_HOST}
-            echo "Updating unbound config host file..."
-          fi
-        fi
-        # Once everything is completed, restart the unbound service
-        if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-          systemctl restart unbound
-        elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-          service unbound restart
-        fi
-      fi
+    9)
+      # Update this management script
+      update-wireguard-script
       ;;
-    10) # Backup WireGuard Config
-      # If the WireGuard config backup file exists, remove it
-      if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
-        rm --force ${WIREGUARD_CONFIG_BACKUP}
-        echo "Removing existing backup..."
-      fi
-      # If the system backup path directory does not exist, create it along with any necessary parent directories
-      if [ ! -d "${SYSTEM_BACKUP_PATH}" ]; then
-        mkdir --parents ${SYSTEM_BACKUP_PATH}
-        echo "Creating backup directory..."
-      fi
-      # If the WireGuard path directory exists, proceed with the backup process
-      if [ -d "${WIREGUARD_PATH}" ]; then
-        # Generate a random 50-character hexadecimal backup password and store it in a file
-        BACKUP_PASSWORD="$(openssl rand -hex 5)"
-        echo "${BACKUP_PASSWORD}" >"${WIREGUARD_BACKUP_PASSWORD_PATH}"
-        # Zip the WireGuard config file using the generated backup password and save it as a backup
-        zip -P "${BACKUP_PASSWORD}" -rj ${WIREGUARD_CONFIG_BACKUP} ${WIREGUARD_CONFIG}
-        # Echo the backup password and path to the terminal
-        echo "Backup Password: ${BACKUP_PASSWORD}"
-        echo "Backup Path: ${WIREGUARD_CONFIG_BACKUP}"
-        echo "Please save the backup password and path in a secure location."
-      fi
+    10)
+      # Backup WireGuard configuration
+      backup-wireguard-config
       ;;
-    11) # Restore WireGuard Config
-      # Check if the WireGuard config backup file does not exist, and if so, exit the script
-      if [ ! -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
-        echo "Error: The WireGuard configuration backup file could not be found. Please ensure it exists and try again."
-        exit
-      fi
-      # Prompt the user to enter the backup password and store it in the WIREGUARD_BACKUP_PASSWORD variable
-      read -rp "Backup Password: " -e -i "$(cat "${WIREGUARD_BACKUP_PASSWORD_PATH}")" WIREGUARD_BACKUP_PASSWORD
-      # If the WIREGUARD_BACKUP_PASSWORD variable is empty, exit the script
-      if [ -z "${WIREGUARD_BACKUP_PASSWORD}" ]; then
-        echo "Error: The backup password field is empty. Please provide a valid password."
-        exit
-      fi
-      # Unzip the backup file, overwriting existing files, using the specified backup password, and extract the contents to the WireGuard path
-      unzip -o -P "${WIREGUARD_BACKUP_PASSWORD}" "${WIREGUARD_CONFIG_BACKUP}" -d "${WIREGUARD_PATH}"
-      # If the current init system is systemd, enable and start the wg-quick service
-      # Manage the service based on the init system
-      if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-        systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
-      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-        service wg-quick@${WIREGUARD_PUB_NIC} start
-      fi
+    11)
+      # Restore WireGuard configuration
+      restore-wireguard-config
       ;;
-    12) # Change the IP address of your wireguard interface.
-      get-network-information
-      # Extract the current IP address method from the WireGuard config file
-      CURRENT_IP_METHORD=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4)
-      # If the current IP address method is IPv4, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV4
-      if [[ ${CURRENT_IP_METHORD} != *"["* ]]; then
-        OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter=":" --fields=1)
-        NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV4}
-      fi
-      # If the current IP address method is IPv6, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV6
-      if [[ ${CURRENT_IP_METHORD} == *"["* ]]; then
-        OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter="[" --fields=2 | cut --delimiter="]" --fields=1)
-        NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV6}
-      fi
-      # If the old server host is different from the new server host, update the server host in the WireGuard config file
-      if [ "${OLD_SERVER_HOST}" != "${NEW_SERVER_HOST}" ]; then
-        sed --in-place "1s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" ${WIREGUARD_CONFIG}
-      fi
-      # Create a list of existing WireGuard clients from the WireGuard config file
-      COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
-      # Add the clients to the USER_LIST array
-      for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
-        USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
-        ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
-      done
-      # Loop through the clients in the USER_LIST array
-      for CLIENT_NAME in "${USER_LIST[@]}"; do
-        # Check if the client's config file exists
-        if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
-          # Update the server host in the client's config file
-          sed --in-place "s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
-        fi
-      done
+    12)
+      # Update WireGuard interface IP
+      update-wireguard-interface-ip
       ;;
-    13) # Change the wireguard interface's port number.
-      # Extract the old server port from the WireGuard config file
-      OLD_SERVER_PORT=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter=":" --fields=2)
-      # Prompt the user to enter a valid custom port (between 1 and 65535) and store it in NEW_SERVER_PORT
-      until [[ "${NEW_SERVER_PORT}" =~ ^[0-9]+$ ]] && [ "${NEW_SERVER_PORT}" -ge 1 ] && [ "${NEW_SERVER_PORT}" -le 65535 ]; do
-        read -rp "Enter a custom port number (between 1 and 65535): " -e -i 51820 NEW_SERVER_PORT
-      done
-      # Check if the chosen port is already in use by another application
-      if [ "$(lsof -i UDP:"${NEW_SERVER_PORT}")" ]; then
-        # If the port is in use, print an error message and exit the script
-        echo "Error: The port number ${NEW_SERVER_PORT} is already in use by another application. Please try a different port number."
-        exit
-      fi
-      # If the old server port is different from the new server port, update the server port in the WireGuard config file
-      if [ "${OLD_SERVER_PORT}" != "${NEW_SERVER_PORT}" ]; then
-        sed --in-place "s/${OLD_SERVER_PORT}/${NEW_SERVER_PORT}/g" ${WIREGUARD_CONFIG}
-        echo "The server port has changed from ${OLD_SERVER_PORT} to ${NEW_SERVER_PORT} in ${WIREGUARD_CONFIG}."
-      fi
-      # Create a list of existing WireGuard clients from the WireGuard config file
-      COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
-      # Add the clients to the USER_LIST array
-      for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
-        USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
-        ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
-      done
-      # Loop through the clients in the USER_LIST array
-      for CLIENT_NAME in "${USER_LIST[@]}"; do
-        # Check if the client's config file exists
-        if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
-          # Update the server port in the client's config file
-          sed --in-place "s/${OLD_SERVER_PORT}/${NEW_SERVER_PORT}/" "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
-          echo "The server port has changed from ${OLD_SERVER_PORT} to ${NEW_SERVER_PORT} in ${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf."
-        fi
-      done
+    13)
+      # Update WireGuard interface port
+      update-wireguard-interface-port
       ;;
-    14) # Remove all the peers from the interface.
-      COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
-      # This line gets the list of clients in the config file by searching for the string "start" and then extracting the second field (the client name) from each line.
-      for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
-        USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
-        ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
-      done
-      # This loop iterates over each client in the list and adds it to an array called USER_LIST.
-      for CLIENT_NAME in "${USER_LIST[@]}"; do
-        CLIENTKEY=$(sed -n "/\# ${CLIENT_NAME} start/,/\# ${CLIENT_NAME} end/p" ${WIREGUARD_CONFIG} | grep PublicKey | cut --delimiter=" " --fields=3)
-        # This line extracts the client's public key from the config file.
-        wg set ${WIREGUARD_PUB_NIC} peer "${CLIENTKEY}" remove
-        # This line removes the client from the server.
-        sed --in-place "/\# ${CLIENT_NAME} start/,/\# ${CLIENT_NAME} end/d" ${WIREGUARD_CONFIG}
-        # This line removes the client's config from the server.
-        if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
-          rm --force ${WIREGUARD_CLIENT_PATH}/"${CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
-        else
-          echo "The client config file for ${CLIENT_NAME} does not exist."
-        fi
-        # This line removes the client's config file from the server.
-        wg addconf ${WIREGUARD_PUB_NIC} <(wg-quick strip ${WIREGUARD_PUB_NIC})
-        # This line removes the client's config from the running server.
-        crontab -l | grep --invert-match "${CLIENT_NAME}" | crontab -
-        # This line removes the client from the cron job.
-      done
+    14)
+      # Purge all WireGuard peers
+      purge-all-wireguard-peers
       ;;
-    15) # Generate a QR code for a WireGuard peer.
-      # Print a prompt asking the user to choose a WireGuard peer for generating a QR code
-      echo "Which WireGuard peer would you like to generate a QR code for?"
-      # Extract and display a list of peer names from the WireGuard config file
-      grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2
-      # Prompt the user to enter the desired peer's name and store it in the VIEW_CLIENT_INFO variable
-      read -rp "Enter the name of the peer you want to view information for: " VIEW_CLIENT_INFO
-      # Check if the config file for the specified peer exists
-      if [ -f "${WIREGUARD_CLIENT_PATH}/${VIEW_CLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf" ]; then
-        # Generate a QR code for the specified peer's config file and display it in the terminal
-        qrencode -t ansiutf8 <${WIREGUARD_CLIENT_PATH}/"${VIEW_CLIENT_INFO}"-${WIREGUARD_PUB_NIC}.conf
-        # Print the file path of the specified peer's config file
-        echo "Peer's config --> ${WIREGUARD_CLIENT_PATH}/${VIEW_CLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf"
-      else
-        # If the config file for the specified peer does not exist, print an error message
-        echo "Error: The peer you specified could not be found. Please ensure you've entered the correct information."
-        exit
-      fi
+    15)
+      # Generate a QR code for WireGuard configuration
+      generate-wireguard-qr-code
       ;;
     16)
-      # Check if the `unbound` command is available on the system by checking if it is executable
-      if [ -x "$(command -v unbound)" ]; then
-        # Check if the output of `unbound-checkconf` run on `UNBOUND_CONFIG` contains "no errors"
-        if [[ "$(unbound-checkconf ${UNBOUND_CONFIG})" != *"no errors"* ]]; then
-          # If "no errors" was not found in output of previous command, print an error message
-          "$(unbound-checkconf ${UNBOUND_CONFIG})"
-          echo "Error: We found an error on your unbound config file located at ${UNBOUND_CONFIG}"
-          exit
-        fi
-        # Check if output of `unbound-host` run on `UNBOUND_CONFIG` with arguments `-C`, `-v`, and `cloudflare.com` contains "secure"
-        if [[ "$(unbound-host -C ${UNBOUND_CONFIG} -v cloudflare.com)" != *"secure"* ]]; then
-          # If "secure" was not found in output of previous command, print an error message
-          "$(unbound-host -C ${UNBOUND_CONFIG} -v cloudflare.com)"
-          echo "Error: We found an error on your unbound DNS-SEC config file loacted at ${UNBOUND_CONFIG}"
-          exit
-        fi
-        echo "Your unbound config file located at ${UNBOUND_CONFIG} is valid."
-      fi
-      # Check if the `wg` command is available on the system by checking if it is executable
-      if [ -x "$(command -v wg)" ]; then
-        # Check if the output of `wg` contains "interface" and "public key"
-        if [[ "$(wg)" != *"interface"* ]] && [[ "$(wg)" != *"public key"* ]]; then
-          # If "interface" and "public key" were not found in output of previous command, print an error message
-          echo "Error: We found an error on your WireGuard interface."
-          exit
-        fi
-        echo "Your WireGuard interface is valid."
-      fi
+      # Verify WireGuard configurations
+      verify-wireguard-configurations
       ;;
     esac
   }
