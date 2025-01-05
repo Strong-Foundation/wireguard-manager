@@ -1380,29 +1380,18 @@ else
 
   # Function to initiate the WireGuard service
   function initiate-wireguard-service() {
-    if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-      systemctl start wg-quick@${WIREGUARD_PUB_NIC}
-    elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-      service wg-quick@${WIREGUARD_PUB_NIC} start
-    fi
+    wg-quick up ${WIREGUARD_PUB_NIC}
   }
 
   # Function to terminate the WireGuard service
   function terminate-wireguard-service() {
-    if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-      systemctl stop wg-quick@${WIREGUARD_PUB_NIC}
-    elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-      service wg-quick@${WIREGUARD_PUB_NIC} stop
-    fi
+    wg-quick down ${WIREGUARD_PUB_NIC}
   }
 
   # Function to restart the WireGuard service
   function restart-wireguard-service() {
-    if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-      systemctl restart wg-quick@${WIREGUARD_PUB_NIC}
-    elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-      service wg-quick@${WIREGUARD_PUB_NIC} restart
-    fi
+    wg-quick down ${WIREGUARD_PUB_NIC}
+    wg-quick up ${WIREGUARD_PUB_NIC}
   }
 
   # Function to ad a new user to wireguard
