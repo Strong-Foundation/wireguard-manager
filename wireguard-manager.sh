@@ -1859,39 +1859,77 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
 
   # Function to update the WireGuard interface IP
   function update-wireguard-interface-ip() {
-    # Change the IP address of your wireguard interface.
-    get-network-information
-    # Extract the current IP address method from the WireGuard config file
-    CURRENT_IP_METHORD=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4)
-    # If the current IP address method is IPv4, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV4
-    if [[ ${CURRENT_IP_METHORD} != *"["* ]]; then
-      OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter=":" --fields=1)
-      NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV4}
-    fi
-    # If the current IP address method is IPv6, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV6
-    if [[ ${CURRENT_IP_METHORD} == *"["* ]]; then
-      OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter="[" --fields=2 | cut --delimiter="]" --fields=1)
-      NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV6}
-    fi
-    # If the old server host is different from the new server host, update the server host in the WireGuard config file
-    if [ "${OLD_SERVER_HOST}" != "${NEW_SERVER_HOST}" ]; then
-      sed --in-place "1s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" ${WIREGUARD_CONFIG}
-    fi
-    # Create a list of existing WireGuard clients from the WireGuard config file
-    COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
-    # Add the clients to the USER_LIST array
-    for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
-      USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
-      ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
+    echo "How would you like to update the IP address?"
+    echo "  1) Automatically detect the current IP"
+    echo "  2) Manually specify the IP"
+    # Prompt the user until they enter a valid choice
+    until [[ "${IP_UPDATE_METHOD}" =~ ^[1-2]$ ]]; do
+      read -rp "Update Method [1-2]:" -e -i 1 IP_UPDATE_METHOD
     done
-    # Loop through the clients in the USER_LIST array
-    for CLIENT_NAME in "${USER_LIST[@]}"; do
-      # Check if the client's config file exists
-      if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
-        # Update the server host in the client's config file
-        sed --in-place "s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
+    case ${IP_UPDATE_METHOD} in
+    1)
+      # Change the IP address of your wireguard interface.
+      get-network-information
+      # Extract the current IP address method from the WireGuard config file
+      CURRENT_IP_METHORD=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4)
+      # If the current IP address method is IPv4, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV4
+      if [[ ${CURRENT_IP_METHORD} != *"["* ]]; then
+        OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter=":" --fields=1)
+        NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV4}
       fi
-    done
+      # If the current IP address method is IPv6, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV6
+      if [[ ${CURRENT_IP_METHORD} == *"["* ]]; then
+        OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter="[" --fields=2 | cut --delimiter="]" --fields=1)
+        NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV6}
+      fi
+      # If the old server host is different from the new server host, update the server host in the WireGuard config file
+      if [ "${OLD_SERVER_HOST}" != "${NEW_SERVER_HOST}" ]; then
+        sed --in-place "1s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" ${WIREGUARD_CONFIG}
+      fi
+      # Create a list of existing WireGuard clients from the WireGuard config file
+      COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
+      # Add the clients to the USER_LIST array
+      for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
+        USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
+        ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
+      done
+      # Loop through the clients in the USER_LIST array
+      for CLIENT_NAME in "${USER_LIST[@]}"; do
+        # Check if the client's config file exists
+        if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
+          # Update the server host in the client's config file
+          sed --in-place "s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
+        fi
+      done
+      ;;
+    2)
+      # Manually specify the IP
+      read -rp "Enter the new server IP address: " NEW_SERVER_HOST
+      if [ -z "${NEW_SERVER_HOST}" ]; then
+        echo "No IP address provided. Aborting."
+        exit 1
+      fi
+      # Extract the current server host for manual update
+      CURRENT_IP_METHOD=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4)
+      if [[ ${CURRENT_IP_METHOD} != *"["* ]]; then
+        OLD_SERVER_HOST=$(echo "${CURRENT_IP_METHOD}" | cut --delimiter=":" --fields=1)
+      else
+        OLD_SERVER_HOST=$(echo "${CURRENT_IP_METHOD}" | cut --delimiter="[" --fields=2 | cut --delimiter="]" --fields=1)
+      fi
+      sed --in-place "1s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" ${WIREGUARD_CONFIG}
+      # Update client configurations
+      COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
+      for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
+        USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
+        ADD_CONTENT=$((${ADD_CONTENT} + 1))
+      done
+      for CLIENT_NAME in "${USER_LIST[@]}"; do
+        if [ -f "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf" ]; then
+          sed --in-place "s/${OLD_SERVER_HOST}/${NEW_SERVER_HOST}/" "${WIREGUARD_CLIENT_PATH}/${CLIENT_NAME}-${WIREGUARD_PUB_NIC}.conf"
+        fi
+      done
+      ;;
+    esac
   }
 
   # Function to update the WireGuard interface port
