@@ -1331,12 +1331,12 @@ Endpoint = ${SERVER_HOST}:${SERVER_PORT}
 PersistentKeepalive = ${NAT_CHOICE}
 PresharedKey = ${PRESHARED_KEY}
 PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${CLIENT_NAME}"-${WIREGUARD_PUB_NIC}.conf
-    # Update ownership of the WireGuard configuration directory to root
-    chown --recursive root:root ${WIREGUARD_PATH}
-    # Apply appropriate permissions to the WireGuard configuration directory
-    find ${WIREGUARD_PATH} -type d -exec chmod 700 {} +
-    # Apply appropriate permissions to the WireGuard configuration files
-    find ${WIREGUARD_PATH} -type f -exec chmod 600 {} +
+    # Apply appropriate permissions to directories (700)
+    find ${WIREGUARD_PATH} -type d -exec chmod 700 {} \;
+    # Apply appropriate permissions to configuration files (600)
+    find ${WIREGUARD_PATH} -type f -exec chmod 600 {} \;
+    # Ensure all files and directories are owned by root:root
+    find ${WIREGUARD_PATH} -exec chown root:root {} \;
     # Schedule automatic WireGuard expiration if enabled
     if [ "${AUTOMATIC_WIREGUARD_EXPIRATION}" == true ]; then
       crontab -l | {
