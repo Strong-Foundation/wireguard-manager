@@ -1400,11 +1400,11 @@ else
     # If a client name isn't supplied, the script will request one
     if [ -z "${NEW_CLIENT_NAME}" ]; then
       echo "Let's name the WireGuard Peer. Use one word only, no special characters, no spaces."
-      read -rp "New client peer:" -e -i "$(openssl rand -hex 25)" NEW_CLIENT_NAME
+      read -rp "New client peer:" -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
     fi
     # If no client name is provided, use openssl to generate a random name
     if [ -z "${NEW_CLIENT_NAME}" ]; then
-      NEW_CLIENT_NAME="$(openssl rand -hex 25)"
+      NEW_CLIENT_NAME="$(openssl rand -hex 5)"
     fi
     # Extract the last IPv4 address used in the WireGuard configuration file
     LASTIPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=3 | cut --delimiter="/" --fields=1 | cut --delimiter="." --fields=4 | tail --lines=1)
@@ -1820,7 +1820,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     # If the WireGuard path directory exists, proceed with the backup process
     if [ -d "${WIREGUARD_PATH}" ]; then
       # Generate a random 50-character hexadecimal backup password and store it in a file
-      BACKUP_PASSWORD="$(openssl rand -hex 25)"
+      BACKUP_PASSWORD="$(openssl rand -hex 10)"
       echo "${BACKUP_PASSWORD}" >"${WIREGUARD_BACKUP_PASSWORD_PATH}"
       # Zip the WireGuard config file using the generated backup password and save it as a backup
       zip -P "${BACKUP_PASSWORD}" -rj ${WIREGUARD_CONFIG_BACKUP} ${WIREGUARD_CONFIG}
