@@ -1985,7 +1985,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to verify the WireGuard configurations
-  function verify-wireguard-configuration() {
+  function verify-wireguard-configurations() {
     # Check if the `unbound` command is available on the system by checking if it is executable
     if [ -x "$(command -v unbound)" ]; then
       # Check if the output of `unbound-checkconf` run on `UNBOUND_CONFIG` contains "no errors"
