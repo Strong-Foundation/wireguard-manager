@@ -66,7 +66,7 @@ jobs:
 
       # Step 10: Update dynamic DNS settings
       - name: Update Dynamic DNS Settings
-        run: IP_UPDATE_METHOD=1 ./wireguard-manager.sh --ddns
+        run: sudo IP_UPDATE_METHOD=1 ./wireguard-manager.sh --ddns
 
       # Step 11: Create a WireGuard backup
       - name: Create WireGuard Backup
