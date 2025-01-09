@@ -387,7 +387,7 @@ usage "$@"
 
 # The function defines default values for configuration variables when installing WireGuard in headless mode.
 # These variables include private subnet settings, server host settings, NAT choice, MTU choice, client allowed IP settings, automatic updates, automatic backup, DNS provider settings, content blocker settings, client name, and automatic config remover.
-function headless-install() {
+function headless_install() {
   # If headless installation is specified, set default values for configuration variables.
   if [ "${HEADLESS_INSTALL}" == true ]; then
     PRIVATE_SUBNET_V4_SETTINGS=${PRIVATE_SUBNET_V4_SETTINGS=1} # Default to 1 if not specified
@@ -410,7 +410,7 @@ function headless-install() {
 }
 
 # Call the headless-install function to set default values for configuration variables in headless mode.
-headless-install
+headless_install
 
 # Set up the wireguard, if config it isn't already there.
 if [ ! -f "${WIREGUARD_CONFIG}" ]; then
