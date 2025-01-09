@@ -48,7 +48,7 @@ function check_root() {
 check_root
 
 # Function to gather current system details
-function system-information() {
+function system_information() {
   # This function fetches the ID, version, and major version of the current system
   if [ -f /etc/os-release ]; then
     # If /etc/os-release file is present, source it to obtain system details
@@ -60,11 +60,11 @@ function system-information() {
   fi
 }
 
-# Invoke the system-information function
-system-information
+# Invoke the system_information function
+system_information
 
 # Define a function to check system requirements
-function installing-system-requirements() {
+function installing_system_requirements() {
   # Check if the current Linux distribution is supported
   if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ] || [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ] || [ "${CURRENT_DISTRO}" == "alpine" ] || [ "${CURRENT_DISTRO}" == "freebsd" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
     # Check if required packages are already installed
@@ -104,10 +104,10 @@ function installing-system-requirements() {
 }
 
 # Call the function to check for system requirements and install necessary packages if needed
-installing-system-requirements
+installing_system_requirements
 
 # Checking For Virtualization
-function virt-check() {
+function virt_check() {
   # This code checks if the system is running in a supported virtualization.
   # It returns the name of the virtualization if it is supported, or "none" if
   # it is not supported. This code is used to check if the system is running in
@@ -128,11 +128,11 @@ function virt-check() {
   esac
 }
 
-# Call the virt-check function to check for supported virtualization.
-virt-check
+# Call the virt_check function to check for supported virtualization.
+virt_check
 
 # The following function checks the kernel version.
-function kernel-check() {
+function kernel_check() {
   CURRENT_KERNEL_VERSION=$(uname --kernel-release | cut --delimiter="." --fields=1-2)
   # Get the current kernel version and extract the major and minor version numbers.
   CURRENT_KERNEL_MAJOR_VERSION=$(echo "${CURRENT_KERNEL_VERSION}" | cut --delimiter="." --fields=1)
@@ -160,11 +160,11 @@ function kernel-check() {
   fi
 }
 
-# Call the kernel-check function to verify the kernel version.
-kernel-check
+# Call the kernel_check function to verify the kernel version.
+kernel_check
 
 # The following function checks if the current init system is one of the allowed options.
-function check-current-init-system() {
+function check_current_init_system() {
   # Get the current init system by checking the process name of PID 1.
   CURRENT_INIT_SYSTEM=$(ps -p 1 -o comm= | awk -F'/' '{print $NF}') # Extract only the command name without the full path.
   # Convert to lowercase to make the comparison case-insensitive.
@@ -181,11 +181,11 @@ function check-current-init-system() {
   fi
 }
 
-# The check-current-init-system function is being called.
-check-current-init-system
+# The check_current_init_system function is being called.
+check_current_init_system
 
 # The following function checks if there's enough disk space to proceed with the installation.
-function check-disk-space() {
+function check_disk_space() {
   # This function checks if there is more than 1 GB of free space on the drive.
   FREE_SPACE_ON_DRIVE_IN_MB=$(df -m / | tr --squeeze-repeats " " | tail -n1 | cut --delimiter=" " --fields=4)
   # This line calculates the available free space on the root partition in MB.
@@ -196,10 +196,8 @@ function check-disk-space() {
   fi
 }
 
-# The check-disk-space function is being called.
-
-check-disk-space
-# Calls the check-disk-space function.
+# Calls the check_disk_space function.
+check_disk_space
 
 # Global variables
 # Assigns the path of the current script to a variable
@@ -290,7 +288,7 @@ function get-network-information() {
 }
 
 # Usage Guide of the application
-function usage-guide() {
+function usage_guide() {
   echo "Usage: ./$(basename "${0}") <command>"
   echo "  --install     Installs the WireGuard interface on your system"
   echo "  --start       Starts the WireGuard interface if it's not already running"
@@ -371,13 +369,13 @@ function usage() {
       shift
       WIREGUARD_OPTIONS=${WIREGUARD_OPTIONS=14}
       ;;
-    --help) # If it's "--help", call the function usage-guide
+    --help) # If it's "--help", call the function usage_guide
       shift
-      usage-guide
+      usage_guide
       ;;
-    *) # If it's anything else, print an error message and call the function usage-guide, then exit
+    *) # If it's anything else, print an error message and call the function usage_guide, then exit
       echo "Invalid argument: ${1}"
-      usage-guide
+      usage_guide
       exit
       ;;
     esac
@@ -418,7 +416,7 @@ headless-install
 if [ ! -f "${WIREGUARD_CONFIG}" ]; then
 
   # Define a function to set a custom IPv4 subnet
-  function set-ipv4-subnet() {
+  function set_ipv4_subnet() {
     # Prompt the user for the desired IPv4 subnet
     echo "Please specify the IPv4 subnet you want to use for the WireGuard interface. This should be a private subnet that is not in use elsewhere on your network. For example, you might choose '10.0.0.0/24' if it's not already in use."
     echo "  1) 10.0.0.0/8 (Recommended)"
@@ -442,10 +440,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Call the function to set the custom IPv4 subnet
-  set-ipv4-subnet
+  set_ipv4_subnet
 
   # Define a function to set a custom IPv6 subnet
-  function set-ipv6-subnet() {
+  function set_ipv6_subnet() {
     # Ask the user which IPv6 subnet they want to use
     echo "Please specify the IPv6 subnet you want to use for the WireGuard interface. This should be a private subnet that is not in use elsewhere on your network. For example, you might choose 'fd00::/64' if it's not already in use."
     echo "  1) fd00:00:00::0/8 (Recommended)"
@@ -471,8 +469,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     esac
   }
 
-  # Call the set-ipv6-subnet function to set the custom IPv6 subnet
-  set-ipv6-subnet
+  # Call the set_ipv6_subnet function to set the custom IPv6 subnet
+  set_ipv6_subnet
 
   # Define the private subnet mask for the IPv4 network used by the WireGuard interface
   PRIVATE_SUBNET_MASK_V4=$(echo "${PRIVATE_SUBNET_V4}" | cut --delimiter="/" --fields=2) # Get the subnet mask of IPv4
@@ -487,7 +485,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   # Call a function to get the networking data
 
   # Define a function to retrieve the IPv4 address of the WireGuard interface
-  function test-connectivity-v4() {
+  function test_connectivity_v4() {
     # Prompt the user to choose the method for detecting the IPv4 address
     echo "How would you like to detect IPv4?"
     echo "  1) Curl (Recommended)"
@@ -513,11 +511,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Call the function to retrieve the IPv4 address
-  test-connectivity-v4
-  # Invoke the function to get the IPv4 address
+  test_connectivity_v4
 
   # Define a function to retrieve the IPv6 address of the WireGuard interface
-  function test-connectivity-v6() {
+  function test_connectivity_v6() {
     # Prompt the user to choose the method for detecting the IPv6 address
     echo "How would you like to detect IPv6?"
     echo "  1) Curl (Recommended)"
@@ -543,10 +540,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Call the function to retrieve the IPv6 address
-  test-connectivity-v6
+  test_connectivity_v6
 
   # Define a function to identify the public Network Interface Card (NIC).
-  function server-pub-nic() {
+  function server_pub_nic() {
     # Prompt the user to select the method for identifying the NIC.
     echo "How would you like to identify the Network Interface Card (NIC)?"
     echo "  1) IP Route (Recommended)"
@@ -578,10 +575,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Call the function to identify the public NIC.
-  server-pub-nic
+  server_pub_nic
 
   # Define a function to configure the WireGuard server's listening port
-  function set-port() {
+  function set_port() {
     # Prompt the user to specify the port for the WireGuard server
     echo "What port do you want WireGuard server to listen to?"
     # Provide the user with options for setting the port
@@ -620,11 +617,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     esac
   }
 
-  # Invoke the set-port function to configure the WireGuard server's listening port
-  set-port
+  # Invoke the set_port function to configure the WireGuard server's listening port
+  set_port
 
   # Define a function to set the NAT keepalive interval.
-  function nat-keepalive() {
+  function nat_keepalive() {
     # Prompt the user to specify the NAT keepalive interval.
     echo "What do you want your NAT keepalive interval to be?"
     # Provide the user with options for setting the interval.
@@ -653,11 +650,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       ;;
     esac
   }
-  # Invoke the nat-keepalive function to set the NAT keepalive interval.
-  nat-keepalive
+  # Invoke the nat_keepalive function to set the NAT keepalive interval.
+  nat_keepalive
 
   # Define a function to configure the Maximum Transmission Unit (MTU) settings.
-  function mtu-set() {
+  function mtu_set() {
     # Ask the user to specify the MTU settings.
     echo "What MTU do you want to use?"
     # Provide the user with options for setting the MTU.
@@ -695,11 +692,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     esac
   }
 
-  # Invoke the mtu-set function to configure the MTU settings.
-  mtu-set
+  # Invoke the mtu_set function to configure the MTU settings.
+  mtu_set
 
   # Define a function to select the IP version for the WireGuard server.
-  function ipvx-select() {
+  function ipvx_select() {
     # Ask the user to specify the IP version to use for connecting to the WireGuard server.
     echo "Which IP version do you want to use for the WireGuard server?"
     # Provide the user with options for setting the IP version.
@@ -733,11 +730,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     esac
   }
 
-  # Invoke the ipvx-select function to select the IP version for the WireGuard server.
-  ipvx-select
+  # Invoke the ipvx_select function to select the IP version for the WireGuard server.
+  ipvx_select
 
   # Define a function to configure the type of traffic the client is allowed to forward through WireGuard.
-  function client-allowed-ip() {
+  function client_allowed_ip() {
     # Ask the user to specify the type of traffic to be forwarded.
     echo "What type of traffic do you want the client to forward through WireGuard?"
     # Provide the user with options for setting the traffic type.
@@ -765,11 +762,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     esac
   }
 
-  # Invoke the client-allowed-ip function to configure the type of traffic the client is allowed to forward.
-  client-allowed-ip
+  # Invoke the client_allowed_ip function to configure the type of traffic the client is allowed to forward.
+  client_allowed_ip
 
   # Function to configure automatic updates
-  function enable-automatic-updates() {
+  function enable_automatic_updates() {
     # Prompt the user to decide if they want to enable automatic updates
     echo "Would you like to setup real-time updates?"
     # Option 1: Enable automatic updates
@@ -805,10 +802,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Invoke the function to configure automatic updates
-  enable-automatic-updates
+  enable_automatic_updates
 
   # Function to configure automatic backup
-  function enable-automatic-backup() {
+  function enable_automatic_backup() {
     # Prompt the user to decide if they want to enable automatic backup
     echo "Would you like to setup real-time backup?"
     # Option 1: Enable automatic backup
@@ -844,10 +841,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Invoke the function to configure automatic backup
-  enable-automatic-backup
+  enable_automatic_backup
 
   # Function to prompt the user for their preferred DNS provider.
-  function ask-install-dns() {
+  function ask_install_dns() {
     # Display the DNS provider options to the user.
     echo "Which DNS provider would you like to use?"
     echo "  1) Unbound (Recommended)"
@@ -890,11 +887,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     esac
   }
 
-  # Invoke the ask-install-dns function to begin the DNS provider selection process.
-  ask-install-dns
+  # Invoke the ask_install_dns function to begin the DNS provider selection process.
+  ask_install_dns
 
   # Function to allow users to select a custom DNS provider.
-  function custom-dns() {
+  function custom_dns() {
     # If the custom DNS option is enabled, proceed with the DNS selection.
     if [ "${CUSTOM_DNS}" == true ]; then
       # Present the user with a list of DNS providers to choose from.
@@ -971,8 +968,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     fi
   }
 
-  # Invoke the custom-dns function to allow the user to select a DNS provider.
-  custom-dns
+  # Invoke the custom_dns function to allow the user to select a DNS provider.
+  custom_dns
 
   # Function to prompt for the name of the first WireGuard peer.
   function client-name() {
@@ -993,7 +990,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   client-name
 
   # Function to set up automatic deletion of WireGuard peers.
-  function auto-remove-config() {
+  function auto_remove_config() {
     # Ask the user if they want to set an expiration date for the peer.
     echo "Do you want to set an expiration date for the peer?"
     echo "  1) Yes, expire after one year (Recommended)"
@@ -1022,10 +1019,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Invoke the function to set up automatic deletion of WireGuard peers.
-  auto-remove-config
+  auto_remove_config
 
   # Function to verify kernel version and install necessary kernel headers.
-  function install-kernel-headers() {
+  function install_kernel_headers() {
     # Define the minimum kernel version required and extract its major and minor version numbers.
     MINIMUM_KERNEL_VERSION="5.6"
     MINIMUM_KERNEL_MAJOR_VERSION=$(echo ${MINIMUM_KERNEL_VERSION} | cut --delimiter="." --fields=1)
@@ -1066,10 +1063,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Invoke the function to verify kernel version and install necessary kernel headers.
-  install-kernel-headers
+  install_kernel_headers
 
   # Function to install either resolvconf or openresolv, depending on the distribution.
-  function install-resolvconf-or-openresolv() {
+  function install_resolvconf_or_openresolv() {
     # Check if resolvconf is already installed on the system.
     if [ ! -x "$(command -v resolvconf)" ]; then
       # If resolvconf is not installed, install it for Ubuntu, Debian, Raspbian, Pop, Kali, Linux Mint, and Neon distributions.
@@ -1099,10 +1096,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Invoke the function to install either resolvconf or openresolv, depending on the distribution.
-  install-resolvconf-or-openresolv
+  install_resolvconf_or_openresolv
 
   # Function to install the WireGuard server if it's not already installed.
-  function install-wireguard-server() {
+  function install_wireguard_server() {
     # Verify if the WireGuard command (wg) is available on the system.
     if [ ! -x "$(command -v wg)" ]; then
       # For Debian-based distributions, update the package list and install WireGuard.
@@ -1151,10 +1148,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Invoke the function to install the WireGuard server.
-  install-wireguard-server
+  install_wireguard_server
 
   # Function to install Unbound, a DNS resolver, if required and not already installed.
-  function install-unbound() {
+  function install_unbound() {
     # If INSTALL_UNBOUND is true and Unbound is not installed, proceed with installation.
     if [ "${INSTALL_UNBOUND}" == true ]; then
       if [ ! -x "$(command -v unbound)" ]; then
@@ -1270,10 +1267,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Call the function to install Unbound.
-  install-unbound
+  install_unbound
 
   # Function to configure WireGuard settings
-  function wireguard-setconf() {
+  function wireguard_setconf() {
     # Generate server private and public keys
     SERVER_PRIVKEY=$(wg genkey)
     SERVER_PUBKEY=$(echo "${SERVER_PRIVKEY}" | wg pubkey)
@@ -1368,34 +1365,34 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${CLIENT_NAME}"-${WIRE
   }
 
   # Configuring WireGuard settings
-  wireguard-setconf
+  wireguard_setconf
 
 # After WireGuard Install
 else
 
   # Function to display the WireGuard configuration
-  function display-wireguard-config() {
+  function display_wireguard_config() {
     wg show ${WIREGUARD_PUB_NIC}
   }
 
   # Function to initiate the WireGuard service
-  function initiate-wireguard-service() {
+  function initiate_wireguard_service() {
     wg-quick up ${WIREGUARD_PUB_NIC}
   }
 
   # Function to terminate the WireGuard service
-  function terminate-wireguard-service() {
+  function terminate_wireguard_service() {
     wg-quick down ${WIREGUARD_PUB_NIC}
   }
 
   # Function to restart the WireGuard service
-  function restart-wireguard-service() {
+  function restart_wireguard_service() {
     wg-quick down ${WIREGUARD_PUB_NIC}
     wg-quick up ${WIREGUARD_PUB_NIC}
   }
 
   # Function to ad a new user to wireguard
-  function add-wireguard-peer() {
+  function add_wireguard_peer() {
     # Adding a new peer to WireGuard
     # If a client name isn't supplied, the script will request one
     if [ -z "${NEW_CLIENT_NAME}" ]; then
@@ -1580,7 +1577,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to remove a WireGuard peer
-  function remove-wireguard-peer() {
+  function remove_wireguard_peer() {
     # Remove WireGuard Peer
     # Prompt the user to choose a WireGuard peer to remove
     echo "Which WireGuard peer would you like to remove?"
@@ -1605,7 +1602,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to reinstall the WireGuard service
-  function reinstall-wireguard() {
+  function reinstall_wireguard() {
     # Reinstall WireGuard
     # Check if the current init system is systemd, and if so, disable and stop the WireGuard service
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
@@ -1640,7 +1637,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to uninstall the WireGuard service
-  function uninstall-wireguard() {
+  function uninstall_wireguard() {
     # Uninstall WireGuard and purging files
     # Check if the current init system is systemd and disable the WireGuard service
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
@@ -1762,7 +1759,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to update the WiregGuard Script
-  function update-wireguard-script() {
+  function update_wireguard_script() {
     # Update WireGuard Manager script.
     # Calculate the SHA3-512 hash of the current WireGuard Manager script
     CURRENT_WIREGUARD_MANAGER_HASH=$(openssl dgst -sha3-512 "${CURRENT_FILE_PATH}" | cut --delimiter=" " --fields=2)
@@ -1806,7 +1803,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to backup the WireGuard configuration
-  function backup-wireguard-config() {
+  function backup_wireguard_config() {
     # If the WireGuard config backup file exists, remove it
     if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
       rm --force ${WIREGUARD_CONFIG_BACKUP}
@@ -1832,7 +1829,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to restore the WireGuard configuration
-  function restore-wireguard-config() {
+  function restore_wireguard_config() {
     # Restore WireGuard Config
     # Check if the WireGuard config backup file does not exist, and if so, exit the script
     if [ ! -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
@@ -1858,7 +1855,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to update the WireGuard interface IP
-  function update-wireguard-interface-ip() {
+  function update_wireguard_interface-ip() {
     echo "How would you like to update the IP address?"
     echo "  1) Automatically detect the current IP"
     echo "  2) Manually specify the IP"
@@ -1933,7 +1930,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to update the WireGuard interface port
-  function update-wireguard-interface-port() {
+  function update_wireguard_interface_port() {
     # Change the wireguard interface's port number.
     # Extract the old server port from the WireGuard config file
     OLD_SERVER_PORT=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4 | cut --delimiter=":" --fields=2)
@@ -1971,7 +1968,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to purge all WireGuard peers
-  function purge-all-wireguard-peers() {
+  function purge_all_wireguard_peers() {
     # Remove all the peers from the interface.
     COMPLETE_CLIENT_LIST=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
     # This line gets the list of clients in the config file by searching for the string "start" and then extracting the second field (the client name) from each line.
@@ -2001,7 +1998,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to generate a QR code for the WireGuard configuration
-  function generate-wireguard-qr-code() {
+  function generate_wireguard_qr_code() {
     # Generate a QR code for a WireGuard peer.
     # Print a prompt asking the user to choose a WireGuard peer for generating a QR code
     echo "Which WireGuard peer would you like to generate a QR code for?"
@@ -2023,7 +2020,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Function to verify the WireGuard configurations
-  function verify-wireguard-configurations() {
+  function verify_wireguard_configurations() {
     # Check if the `unbound` command is available on the system by checking if it is executable
     if [ -x "$(command -v unbound)" ]; then
       # Check if the output of `unbound-checkconf` run on `UNBOUND_CONFIG` contains "no errors"
@@ -2079,67 +2076,67 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     case ${WIREGUARD_OPTIONS} in
     1)
       # Display WireGuard configuration
-      display-wireguard-config
+      display_wireguard_config
       ;;
     2)
       # Initiate WireGuard service
-      initiate-wireguard-service
+      initiate_wireguard_service
       ;;
     3)
       # Terminate WireGuard service
-      terminate-wireguard-service
+      terminate_wireguard_service
       ;;
     4)
       # Restart WireGuard service
-      restart-wireguard-service
+      restart_wireguard_service
       ;;
     5)
       # Add a new WireGuard peer (client)
-      add-wireguard-peer
+      add_wireguard_peer
       ;;
     6)
       # Remove a WireGuard peer (client)
-      remove-wireguard-peer
+      remove_wireguard_peer
       ;;
     7)
       # Reinstall WireGuard service
-      reinstall-wireguard
+      reinstall_wireguard
       ;;
     8)
       # Uninstall WireGuard service
-      uninstall-wireguard
+      uninstall_wireguard
       ;;
     9)
       # Update this management script
-      update-wireguard-script
+      update_wireguard_script
       ;;
     10)
       # Backup WireGuard configuration
-      backup-wireguard-config
+      backup_wireguard_config
       ;;
     11)
       # Restore WireGuard configuration
-      restore-wireguard-config
+      restore_wireguard_config
       ;;
     12)
       # Update WireGuard interface IP
-      update-wireguard-interface-ip
+      update_wireguard_interface-ip
       ;;
     13)
       # Update WireGuard interface port
-      update-wireguard-interface-port
+      update_wireguard_interface_port
       ;;
     14)
       # Purge all WireGuard peers
-      purge-all-wireguard-peers
+      purge_all_wireguard_peers
       ;;
     15)
       # Generate a QR code for WireGuard configuration
-      generate-wireguard-qr-code
+      generate_wireguard_qr_code
       ;;
     16)
       # Verify WireGuard configurations
-      verify-wireguard-configurations
+      verify_wireguard_configurations
       ;;
     esac
   }
