@@ -1,18 +1,31 @@
 ```mermaid
 graph LR
-  subgraph Client Devices
-    A[Phone] -->|Connects via UDP, Port 51820| VPN
-    B[Laptop] -->|Connects via UDP, Port 51820| VPN
-    C[Computer] -->|Connects via UDP, Port 51820| VPN
+  %% VPN Client Devices
+  subgraph "VPN Client Devices"
+    phone[Phone - WireGuard Client] -->|Connects to| internet["Internet"]
+    laptop[Laptop - WireGuard Client] -->|Connects to| internet
+    computer[Computer - WireGuard Client] -->|Connects to| internet
+    smartTV[Smart TV - WireGuard Client] -->|Connects to| internet
+    tablet[Tablet - WireGuard Client] -->|Connects to| internet
   end
 
-  VPN[WireGuard Server with DNS]:::server
+  %% Internet Layer
+  subgraph "Internet"
+    internet -->|Encrypts Traffic and Sends to| vpnServer[WireGuard VPN Server]
+  end
 
-  VPN -->|Routes Encrypted Traffic| I[Internet]:::internet
+  %% WireGuard VPN Server
+  subgraph "WireGuard VPN Server"
+    vpnServer -->|Decrypts Traffic| wireGuardVPN[VPN Traffic Processor]
+    wireGuardVPN -->|Handles DNS Requests| dnsServer[DNS Server]
+    firewall[Firewall] -->|Filters Incoming and Outgoing Traffic| wireGuardVPN
+    router[Router] -->|Performs NAT for VPN Traffic| wireGuardVPN
+    wireGuardVPN -->|Routes Decrypted Traffic to| internetDestination["Internet Destination"]
+  end
 
-  I -->|Access to Services| D[Destination Servers]:::services
+  %% Internet Destination
+  subgraph "Internet Destination"
+    internetDestination -->|Routes Traffic to Services| destinationServices[Destination Servers]
+  end
 
-  classDef server fill:#f9f,stroke:#333,stroke-width:2px;
-  classDef internet fill:#9cf,stroke:#333,stroke-width:2px;
-  classDef services fill:#fc9,stroke:#333,stroke-width:2px;
 ```
