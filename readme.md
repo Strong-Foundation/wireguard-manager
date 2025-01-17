@@ -441,9 +441,8 @@ graph LR
   internet
   vpnServer
   localRouter -->|"Encrypts Traffic and Sends to Internet"| internet
-  laptop -->|"Sends Traffic to Internet"| internet
-  phone -->|"Sends Traffic to Internet"| internet
-
+  laptop -->|"Encrypts Traffic and Sends to Internet"| internet
+  phone -->|"Encrypts Traffic and Sends to Internet"| internet
 ```
 
 ## 🤝 Code Development
