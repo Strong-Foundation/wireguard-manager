@@ -226,8 +226,6 @@ RESOLV_CONFIG="/etc/resolv.conf"
 RESOLV_CONFIG_OLD="${RESOLV_CONFIG}.old"
 # Assigns a path for Unbound DNS resolver
 UNBOUND_ROOT="/etc/unbound"
-# Assigns a path for the WireGuard Manager script
-UNBOUND_MANAGER="${UNBOUND_ROOT}/wireguard-manager"
 # Assigns a path for the Unbound configuration file
 UNBOUND_CONFIG="${UNBOUND_ROOT}/unbound.conf"
 # Assigns a path for the Unbound root hints file
@@ -1259,8 +1257,6 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       echo "nameserver 127.0.0.1" >${RESOLV_CONFIG}
       echo "nameserver ::1" >>${RESOLV_CONFIG}
       chattr +i ${RESOLV_CONFIG}
-      # Save Unbound status to UNBOUND_MANAGER file.
-      echo "Unbound: true" >${UNBOUND_MANAGER}
       # Set CLIENT_DNS to use gateway addresses.
       CLIENT_DNS="${GATEWAY_ADDRESS_V4},${GATEWAY_ADDRESS_V6}"
     fi
