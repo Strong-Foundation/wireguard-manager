@@ -2052,7 +2052,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # What to do if the software is already installed?
-  function wireguard-next-questions-interface() {
+  function wireguard_next_questions_interface() {
     echo "Please select an action:"
     echo "   1) Display WireGuard configuration"
     echo "   2) Initiate WireGuard service"
@@ -2142,6 +2142,6 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   }
 
   # Running Questions Command
-  wireguard-next-questions-interface
+  wireguard_next_questions_interface
 
 fi
