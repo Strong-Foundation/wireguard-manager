@@ -271,8 +271,8 @@ else
   SYSTEM_CRON_NAME="cron"
 fi
 
-# This is a Bash function named "get-network-information" that retrieves network information.
-function get-network-information() {
+# This is a Bash function named "get_network_information" that retrieves network information.
+function get_network_information() {
   # This variable will store the IPv4 address of the default network interface by querying the "ipengine" API using "curl" command and extracting it using "jq" command.
   DEFAULT_INTERFACE_IPV4="$(curl --ipv4 --connect-timeout 5 --tlsv1.2 --silent 'https://checkip.amazonaws.com')"
   # If the IPv4 address is empty, try getting it from another API.
@@ -481,7 +481,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   # Define the IPv6 gateway for the WireGuard interface
   GATEWAY_ADDRESS_V6=$(echo "${PRIVATE_SUBNET_V6}" | cut --delimiter=":" --fields=1-3)::1 # Get the gateway address of IPv6
   # Retrieve the networking configuration details
-  get-network-information
+  get_network_information
   # Call a function to get the networking data
 
   # Define a function to retrieve the IPv4 address of the WireGuard interface
