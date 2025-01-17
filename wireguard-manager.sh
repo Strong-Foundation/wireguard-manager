@@ -1866,7 +1866,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     case ${IP_UPDATE_METHOD} in
     1)
       # Change the IP address of your wireguard interface.
-      get-network-information
+      get_network_information
       # Extract the current IP address method from the WireGuard config file
       CURRENT_IP_METHORD=$(head --lines=1 ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=4)
       # If the current IP address method is IPv4, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV4
