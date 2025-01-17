@@ -972,7 +972,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   custom_dns
 
   # Function to prompt for the name of the first WireGuard peer.
-  function client-name() {
+  function client_name() {
     # If CLIENT_NAME variable is not set, prompt the user for input.
     if [ -z "${CLIENT_NAME}" ]; then
       # Display naming rules to the user.
@@ -987,7 +987,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   }
 
   # Invoke the function to prompt for the first WireGuard peer's name.
-  client-name
+  client_name
 
   # Function to set up automatic deletion of WireGuard peers.
   function auto_remove_config() {
