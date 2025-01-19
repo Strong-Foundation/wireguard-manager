@@ -43,7 +43,7 @@ function check_root() {
     # If the user ID is not 0 (i.e., not root), print an error message
     echo "Error: This script must be run as root."
     # Exit the script with a status code of 1, indicating an error
-    exit 1
+    exit 1 # Exit the script with an error code.
   fi
 }
 
@@ -115,7 +115,7 @@ function installing_system_requirements() {
   else
     # If the current distribution is not supported, display an error and exit the script
     echo "Error: Your current distribution ${CURRENT_DISTRO} version ${CURRENT_DISTRO_VERSION} is not supported by this script. Please consider updating your distribution or using a supported one."
-    exit 1
+    exit 1 # Exit the script with an error code.
   fi
 }
 
@@ -139,7 +139,7 @@ function virt_check() {
   "kvm" | "none" | "qemu" | "lxc" | "microsoft" | "vmware" | "xen" | "amazon" | "docker") ;;
   *)
     echo "Error: the ${CURRENT_SYSTEM_VIRTUALIZATION} virtualization is currently not supported. Please stay tuned for future updates."
-    exit
+    exit 1 # Exit the script with an error code.
     ;;
   esac
 }
@@ -164,14 +164,14 @@ function kernel_check() {
   if [ "${CURRENT_KERNEL_MAJOR_VERSION}" -lt "${ALLOWED_KERNEL_MAJOR_VERSION}" ]; then
     # If the current major version is less than the allowed major version, show an error message and exit.
     echo "Error: Your current kernel version ${CURRENT_KERNEL_VERSION} is not supported. Please update to version ${ALLOWED_KERNEL_VERSION} or later."
-    exit
+    exit 1 # Exit the script with an error code.
   fi
   if [ "${CURRENT_KERNEL_MAJOR_VERSION}" == "${ALLOWED_KERNEL_MAJOR_VERSION}" ]; then
     # If the current major version is equal to the allowed major version, check the minor version.
     if [ "${CURRENT_KERNEL_MINOR_VERSION}" -lt "${ALLOWED_KERNEL_MINOR_VERSION}" ]; then
       # If the current minor version is less than the allowed minor version, show an error message and exit.
       echo "Error: Your current kernel version ${CURRENT_KERNEL_VERSION} is not supported. Please update to version ${ALLOWED_KERNEL_VERSION} or later."
-      exit
+    exit 1 # Exit the script with an error code.
     fi
   fi
 }
@@ -208,7 +208,7 @@ function check_disk_space() {
   if [ "${FREE_SPACE_ON_DRIVE_IN_MB}" -le 1024 ]; then
     # If the available free space is less than or equal to 1024 MB (1 GB), display an error message and exit.
     echo "Error: You need more than 1 GB of free space to install everything. Please free up some space and try again."
-    exit
+    exit 1 # Exit the script with an error code.
   fi
 }
 
