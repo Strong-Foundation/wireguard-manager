@@ -36,74 +36,90 @@
 
 # Note: This script is provided 'as is', without warranty of any kind. The user is responsible for understanding the operations and risks involved.
 
-# Check if the script is running as root
+# Define a function to check if the script is being run with root privileges
 function check_root() {
+  # Compare the user ID of the current user to 0, which is the ID for root
   if [ "$(id -u)" -ne 0 ]; then
+    # If the user ID is not 0 (i.e., not root), print an error message
     echo "Error: This script must be run as root."
+    # Exit the script with a status code of 1, indicating an error
     exit 1
   fi
 }
 
-# Call the function to check root privileges
+# Call the check_root function to verify that the script is executed with root privileges
 check_root
 
-# Function to gather current system details
+# Define a function to gather and store system-related information
 function system_information() {
-  # This function fetches the ID, version, and major version of the current system
+  # Check if the /etc/os-release file exists, which contains information about the OS
   if [ -f /etc/os-release ]; then
-    # If /etc/os-release file is present, source it to obtain system details
-    # shellcheck source=/dev/null
+    # If the /etc/os-release file is present, source it to load system details into environment variables
+    # shellcheck source=/dev/null  # Instructs shellcheck to ignore warnings about sourcing files
     source /etc/os-release
-    CURRENT_DISTRO=${ID}                                                                              # CURRENT_DISTRO holds the system's ID
-    CURRENT_DISTRO_VERSION=${VERSION_ID}                                                              # CURRENT_DISTRO_VERSION holds the system's VERSION_ID
-    CURRENT_DISTRO_MAJOR_VERSION=$(echo "${CURRENT_DISTRO_VERSION}" | cut --delimiter="." --fields=1) # CURRENT_DISTRO_MAJOR_VERSION holds the major version of the system (e.g., "16" for Ubuntu 16.04)
+    # Set the CURRENT_DISTRO variable to the system's distribution ID (e.g., 'ubuntu', 'debian')
+    CURRENT_DISTRO=${ID}
+    # Set the CURRENT_DISTRO_VERSION variable to the system's version ID (e.g., '20.04' for Ubuntu 20.04)
+    CURRENT_DISTRO_VERSION=${VERSION_ID}
+    # Extract the major version of the system by splitting the version string at the dot (.) and keeping the first field
+    # For example, for '20.04', it will set CURRENT_DISTRO_MAJOR_VERSION to '20'
+    CURRENT_DISTRO_MAJOR_VERSION=$(echo "${CURRENT_DISTRO_VERSION}" | cut --delimiter="." --fields=1)
   fi
 }
 
-# Invoke the system_information function
+# Call the system_information function to gather the system details
 system_information
 
-# Define a function to check system requirements
+# Define a function to check system requirements and install missing packages
 function installing_system_requirements() {
-  # Check if the current Linux distribution is supported
+  # Check if the current Linux distribution is one of the supported distributions
   if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ] || [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ] || [ "${CURRENT_DISTRO}" == "alpine" ] || [ "${CURRENT_DISTRO}" == "freebsd" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
-    # Check if required packages are already installed
+    # If the distribution is supported, check if the required packages are already installed
     if { [ ! -x "$(command -v curl)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v jq)" ] || [ ! -x "$(command -v ip)" ] || [ ! -x "$(command -v lsof)" ] || [ ! -x "$(command -v cron)" ] || [ ! -x "$(command -v awk)" ] || [ ! -x "$(command -v ps)" ] || [ ! -x "$(command -v grep)" ] || [ ! -x "$(command -v qrencode)" ] || [ ! -x "$(command -v sed)" ] || [ ! -x "$(command -v zip)" ] || [ ! -x "$(command -v unzip)" ] || [ ! -x "$(command -v openssl)" ] || [ ! -x "$(command -v nft)" ] || [ ! -x "$(command -v ifup)" ] || [ ! -x "$(command -v chattr)" ] || [ ! -x "$(command -v gpg)" ] || [ ! -x "$(command -v systemd-detect-virt)" ]; }; then
-      # Install required packages depending on the Linux distribution
+      # If any of the required packages are missing, begin the installation process for the respective distribution
       if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
+        # For Debian-based distributions, update package lists and install required packages
         apt-get update
         apt-get install curl coreutils jq iproute2 lsof cron gawk procps grep qrencode sed zip unzip openssl nftables ifupdown e2fsprogs gnupg systemd -y
       elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+        # For Red Hat-based distributions, check for updates and install required packages
         yum check-update
+        # For CentOS 7+, install EPEL and ELRepo repositories if needed
         if [ "${CURRENT_DISTRO}" == "centos" ] && [ "${CURRENT_DISTRO_MAJOR_VERSION}" -ge 7 ]; then
           yum install epel-release elrepo-release -y
         fi
+        # If CentOS 7, install the ELRepo plugin
         if [ "${CURRENT_DISTRO}" == "centos" ] && [ "${CURRENT_DISTRO_MAJOR_VERSION}" == 7 ]; then
           yum install yum-plugin-elrepo -y
         fi
+        # Install necessary packages for Red Hat-based distributions
         yum install curl coreutils jq iproute lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y
       elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
+        # For Arch-based distributions, update the keyring and install required packages
         pacman -Sy --noconfirm archlinux-keyring
         pacman -Su --noconfirm --needed curl coreutils jq iproute2 lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables ifupdown e2fsprogs gnupg systemd
       elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
+        # For Alpine Linux, update package lists and install required packages
         apk update
         apk add curl coreutils jq iproute2 lsof cronie gawk procps grep sed zip unzip openssl nftables e2fsprogs gnupg
-        # apk add curl coreutils jq iproute2 lsof cronie gawk procps grep qrencode sed zip unzip openssl nftables ifupdown e2fsprogs gnupg systemd
       elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
+        # For FreeBSD, update package lists and install required packages
         pkg update
         pkg install curl coreutils jq iproute2 lsof cronie gawk procps grep qrencode sed zip unzip openssl nftables ifupdown e2fsprogs gnupg systemd
       elif [ "${CURRENT_DISTRO}" == "ol" ]; then
+        # For Oracle Linux (OL), check for updates and install required packages
         yum check-update
         yum install curl coreutils jq iproute lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y
       fi
     fi
   else
+    # If the current distribution is not supported, display an error and exit the script
     echo "Error: Your current distribution ${CURRENT_DISTRO} version ${CURRENT_DISTRO_VERSION} is not supported by this script. Please consider updating your distribution or using a supported one."
-    exit
+    exit 1
   fi
 }
 
-# Call the function to check for system requirements and install necessary packages if needed
+# Call the function to check system requirements and install necessary packages if needed
 installing_system_requirements
 
 # Checking For Virtualization
