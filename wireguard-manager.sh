@@ -171,7 +171,7 @@ function kernel_check() {
     if [ "${CURRENT_KERNEL_MINOR_VERSION}" -lt "${ALLOWED_KERNEL_MINOR_VERSION}" ]; then
       # If the current minor version is less than the allowed minor version, show an error message and exit.
       echo "Error: Your current kernel version ${CURRENT_KERNEL_VERSION} is not supported. Please update to version ${ALLOWED_KERNEL_VERSION} or later."
-    exit 1 # Exit the script with an error code.
+      exit 1 # Exit the script with an error code.
     fi
   fi
 }
@@ -1204,8 +1204,13 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       fi
       # Configure Unbound using anchor and root hints.
       unbound-anchor -a ${UNBOUND_ANCHOR}
-      # Download root hints.
+      # Download root hints from the specified URL.
       curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" --create-dirs -o ${UNBOUND_ROOT_HINTS}
+      # Check if the root hints file does not exist.
+      if [ ! -f ${UNBOUND_ROOT_HINTS} ]; then
+        # If the root hints file is missing, attempt to download it again.
+        curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" --create-dirs -o ${UNBOUND_ROOT_HINTS}
+      fi
       # Configure Unbound settings.
       # The settings are stored in a temporary variable and then written to the Unbound configuration file.
       # If INSTALL_BLOCK_LIST is true, include a block list in the Unbound configuration.
