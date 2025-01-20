@@ -359,15 +359,95 @@ usage: bash /usr/local/bin/wireguard-manager.sh # --install
 
 To set up your own VPN server, you will need the following items:
 
-### Raspberry Pi 5 Setup Components
+### **Raspberry Pi 5 VPN Setup Components**
 
-- **Raspberry Pi 5**: [View Product](https://www.raspberrypi.com/products/raspberry-pi-5/)
-- **Raspberry Pi Case**: [View Product](https://www.raspberrypi.com/products/raspberry-pi-5-case/)
-- **Raspberry Pi Active Cooler**: [View Product](https://www.raspberrypi.com/products/active-cooler)
-- **Raspberry Pi USB-C Power Supply**: [View Product](https://www.raspberrypi.com/products/27w-power-supply/)
-- **Micro SD Card**: [View on Amazon](https://www.amazon.com/dp/B06XWMQ81P)
-- **Ethernet Cable**: [View on Amazon](https://www.amazon.com/dp/B00N2VIALK)
-- **SD Card Reader**: [View on Amazon](https://www.amazon.com/dp/B0957HQ4D1)
+To set up a Raspberry Pi 5 as a VPN server or client, you will need the following components:
+
+#### **1. Raspberry Pi 5**
+
+- **Key Features:** Quad-core ARM Cortex-A76, up to 8GB RAM, dual 4K HDMI, USB 3.0, and Gigabit Ethernet.
+- **[View Product](https://www.raspberrypi.com/products/raspberry-pi-5/)**
+
+#### **2. Raspberry Pi Case**
+
+- **Key Features:** Custom fit with passive cooling for the Raspberry Pi 5, helps with heat management.
+- **[View Product](https://www.raspberrypi.com/products/raspberry-pi-5-case/)**
+
+#### **3. Raspberry Pi Active Cooler**
+
+- **Key Features:** Active cooling with a quiet fan, essential for extended VPN use.
+- **[View Product](https://www.raspberrypi.com/products/active-cooler)**
+
+#### **4. Raspberry Pi USB-C Power Supply**
+
+- **Key Features:** 5V/3A, ensures stable power for continuous VPN operation.
+- **[View Product](https://www.raspberrypi.com/products/27w-power-supply/)**
+
+#### **5. Micro SD Card**
+
+- **Key Features:** High-speed UHS-I card (32GB or higher recommended), stores OS and VPN configurations.
+- **[View on Amazon](https://www.amazon.com/dp/B06XWMQ81P)**
+
+#### **6. Ethernet Cable**
+
+- **Key Features:** Gigabit Ethernet for fast, reliable connection to the internet and local network.
+- **[View on Amazon](https://www.amazon.com/dp/B00N2VIALK)**
+
+#### **7. SD Card Reader**
+
+- **Key Features:** High-speed transfer for setting up the Raspberry Pi OS and VPN software.
+- **[View on Amazon](https://www.amazon.com/dp/B0957HQ4D1)**
+
+---
+
+### **Additional Components for VPN Setup**
+
+#### **8. USB Wi-Fi Adapter** (Optional)
+
+- **Key Features:** If you're setting up a wireless VPN server, a compatible USB Wi-Fi adapter is needed for wireless connectivity.
+- **[View on Amazon](https://www.amazon.com/dp/B08T5C76F2)**
+
+#### **9. External Hard Drive/SSD** (Optional)
+
+- **Key Features:** For storing large amounts of VPN logs or data, an external drive provides more storage.
+- **[View on Amazon](https://www.amazon.com/dp/B08PCFFCLP)**
+
+#### **10. VPN Configuration Files**
+
+- **Key Features:** Pre-configured VPN client/server files for easy setup. These include configuration files for WireGuard or OpenVPN.
+- **Download for WireGuard:** [WireGuard Downloads](https://www.wireguard.com/install/)
+- **Download for OpenVPN:** [OpenVPN Downloads](https://openvpn.net/community-downloads/)
+
+#### **11. Static IP Address** (Optional)
+
+- **Key Features:** For remote VPN access, a static IP address (or dynamic DNS) ensures consistent connectivity to your Raspberry Pi.
+- **[Learn More about Dynamic DNS](https://www.noip.com/)**
+
+#### **12. Router Port Forwarding**
+
+- **Key Features:** Forwarding ports (e.g., UDP port 51820 for WireGuard or UDP 1194 for OpenVPN) on your router is necessary for external access to your VPN.
+- **[Learn How to Port Forward](https://www.portforward.com/)**
+
+#### **13. USB Keyboard and Mouse**
+
+- **Key Features:** Required for initial setup and configuration of the Raspberry Pi via the desktop interface.
+- **[View on Amazon](https://www.amazon.com/dp/B08BLR5S4G)**
+
+#### **14. Monitor/HDMI Cable**
+
+- **Key Features:** If you’re doing the setup directly on the Raspberry Pi, a monitor and HDMI cable will be required to interact with the GUI.
+- **[View on Amazon](https://www.amazon.com/dp/B0855T1W4Q)**
+
+---
+
+### **Optional Software and Tools**
+
+- **WireGuard or OpenVPN Software**
+
+  - WireGuard or OpenVPN can be installed for secure, high-performance VPN connections. Use the Raspberry Pi terminal to install them via commands.
+
+- **Dynamic DNS Service**
+  - Useful for giving your Raspberry Pi a consistent hostname to connect to, especially if your external IP address changes frequently.
 
 ### Estimated Cost for Building Your Own VPN
 
