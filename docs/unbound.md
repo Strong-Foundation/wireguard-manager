@@ -1,48 +1,119 @@
-### Blocking Domains Using Unbound
+# Managing Unbound DNS: Blocking Domains, Enabling Logging, and Troubleshooting
 
-To block domains using Unbound, add the necessary configuration and restart the Unbound service:
+This guide explains how to configure Unbound for domain blocking, enable detailed logging, and troubleshoot common issues.
 
-```bash
-# Append configuration to include hosts.conf in unbound.conf
-echo -e "\tinclude: /etc/unbound/unbound.conf.d/hosts.conf" >> /etc/unbound/unbound.conf
+---
 
-# Fetch the list of domains to block and format it for Unbound
-curl "https://raw.githubusercontent.com/complexorganizations/content-blocker/main/assets/hosts" | awk '{print "local-zone: \""$1"\" always_refuse"}' > /etc/unbound/unbound.conf.d/hosts.conf
+## **Blocking Domains Using Unbound**
 
-# Restart Unbound to apply changes
-systemctl restart unbound || service unbound restart
-```
+To block specific domains, you need to update Unbound's configuration and apply the changes:
 
-### Enabling Logging in Unbound
+1. **Update the Main Configuration File**  
+   Add a directive to include the `hosts.conf` file in the main Unbound configuration.
 
-To enable detailed logging in Unbound, update the configuration and create the log file:
+   ```bash
+   echo -e "\tinclude: /etc/unbound/unbound.conf.d/hosts.conf" >> /etc/unbound/unbound.conf
+   ```
 
-```bash
-# Increase verbosity level for detailed logging
-sed -i "s|verbosity: 0|verbosity: 5|" /etc/unbound/unbound.conf
+2. **Fetch and Format the Blocklist**  
+   Download a list of domains to block and format them for Unbound. The following command fetches the blocklist and converts it into Unbound's `local-zone` format:
 
-# Specify log file location and enable query logging
-echo -e "\tlogfile: /var/log/unbound.log\n\tlog-queries: yes" >> /etc/unbound/unbound.conf
+   ```bash
+   curl "https://raw.githubusercontent.com/complexorganizations/content-blocker/main/assets/hosts" | awk '{print "local-zone: \""$1"\" always_refuse"}' > /etc/unbound/unbound.conf.d/hosts.conf
+   ```
 
-# Create and set permissions for the log file
-touch /var/log/unbound.log
-chown unbound:unbound /var/log/unbound.log
+3. **Restart the Unbound Service**  
+   Apply the updated configuration by restarting Unbound:
 
-# Restart Unbound to apply changes
-systemctl restart unbound || service unbound restart
+   ```bash
+   systemctl restart unbound || service unbound restart
+   ```
 
-# Optional: Tail the log file to view logs in real-time
-tail -f /var/log/unbound.log
-```
+---
 
-### Resolving Domain Issues in Unbound
+## **Enabling Logging in Unbound**
 
-If Unbound is not resolving domains, modify the trust anchor file setting and restart the service:
+Detailed logging helps in monitoring and troubleshooting Unbound's behavior.
 
-```bash
-# Comment out auto-trust-anchor-file setting in unbound.conf
-sed -i "s|auto-trust-anchor-file: /var/lib/unbound/root.key|# auto-trust-anchor-file: /var/lib/unbound/root.key|" /etc/unbound/unbound.conf
+1. **Increase Verbosity**  
+   Modify the verbosity level to `5` (maximum detail):
 
-# Restart Unbound to apply changes
-systemctl restart unbound || service unbound restart
-```
+   ```bash
+   sed -i "s|verbosity: 0|verbosity: 5|" /etc/unbound/unbound.conf
+   ```
+
+2. **Enable Query Logging**  
+   Specify the log file location and enable query logging:
+
+   ```bash
+   echo -e "\tlogfile: /var/log/unbound.log\n\tlog-queries: yes" >> /etc/unbound/unbound.conf
+   ```
+
+3. **Prepare the Log File**  
+   Create the log file and set the necessary permissions:
+
+   ```bash
+   touch /var/log/unbound.log
+   chown unbound:unbound /var/log/unbound.log
+   ```
+
+4. **Restart Unbound**  
+   Restart the service to apply the logging changes:
+
+   ```bash
+   systemctl restart unbound || service unbound restart
+   ```
+
+5. **View Logs in Real-Time**  
+   Use the `tail` command to monitor logs as they are written:
+
+   ```bash
+   tail -f /var/log/unbound.log
+   ```
+
+---
+
+## **Troubleshooting: Resolving Domain Issues**
+
+If Unbound is failing to resolve domains, the issue might be with the trust anchor file. To fix this:
+
+1. **Comment Out the Trust Anchor Setting**  
+   Modify the configuration to disable the `auto-trust-anchor-file` directive:
+
+   ```bash
+   sed -i "s|auto-trust-anchor-file: /var/lib/unbound/root.key|# auto-trust-anchor-file: /var/lib/unbound/root.key|" /etc/unbound/unbound.conf
+   ```
+
+2. **Restart Unbound**  
+   Apply the change by restarting the service:
+
+   ```bash
+   systemctl restart unbound || service unbound restart
+   ```
+
+---
+
+## **Additional Notes**
+
+- **Checking Unbound Status**  
+  Use the following command to verify that Unbound is running properly:
+
+  ```bash
+  systemctl status unbound
+  ```
+
+- **Testing DNS Resolution**  
+  Test Unbound's resolution capabilities using the `dig` or `nslookup` command:
+
+  ```bash
+  dig example.com @127.0.0.1
+  ```
+
+- **Viewing Blocked Domains**  
+  Check the `hosts.conf` file to verify that the blocklist was applied correctly:
+
+  ```bash
+  less /etc/unbound/unbound.conf.d/hosts.conf
+  ```
+
+By following these steps, you can effectively block unwanted domains, enable logging for better analysis, and troubleshoot common issues in Unbound.
