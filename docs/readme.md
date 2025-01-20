@@ -103,8 +103,6 @@ To get started with WireGuard Manager, follow these simple steps:
 3. **Add Users and Peers**: Once set up, you can start adding users and peers to your VPN network with just a few clicks.
 4. **Monitor and Adjust Settings**: Use the intuitive dashboard to monitor your VPN's performance and make adjustments to configurations as needed.
 
-For detailed setup instructions and further support, refer to the official [WireGuard Manager Wiki](https://github.com/complexorganizations/wireguard-manager/wiki).
-
 ---
 
 ## **Conclusion**
