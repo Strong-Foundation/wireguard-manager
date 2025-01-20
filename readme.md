@@ -467,15 +467,15 @@ This section compares the internet speed differences between using no VPN, WireG
 
 ### No VPN (Normal Connection)
 
-![No VPN Speed Test](https://www.speedtest.net/result/17272632622.png)
+![No VPN Speed Test](https://www.speedtest.net/result/17272708312.png)
 
 ### WireGuard Speed Test
 
-![Wireguard Speed Test](https://www.speedtest.net/result/15776045897.png)
+![Wireguard Speed Test](https://www.speedtest.net/result/17272711810.png)
 
 ### OpenVPN Speed Test
 
-![OpenVPN Speed Test](https://www.speedtest.net/result/15593895433.png)
+![OpenVPN Speed Test](https://www.speedtest.net/result/17272725718.png)
 
 ## 🙅 Content-Blocking vs. No Content-Blocking
 
