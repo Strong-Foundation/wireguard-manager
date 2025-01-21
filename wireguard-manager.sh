@@ -1265,6 +1265,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       fi
       # Update ownership of Unbound's root directory.
       chown --recursive "${USER}":"${USER}" ${UNBOUND_ROOT}
+      # Update the permissions of the Unbound configuration file.
+      chmod 644 ${UNBOUND_CONFIG}
+      # Update the permissions of the unbound root hints file.
+      chmod 644 ${UNBOUND_ROOT_HINTS}
       # Update the resolv.conf file to use Unbound.
       if [ -f "${RESOLV_CONFIG_OLD}" ]; then
         rm --force ${RESOLV_CONFIG_OLD}
