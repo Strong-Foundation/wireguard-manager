@@ -1815,6 +1815,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         if [ "${CURRENT_ROOT_HINTS_HASH}" != "${NEW_ROOT_HINTS_HASH}" ]; then
           curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" -o ${UNBOUND_ROOT_HINTS}
           echo "Updating root hints file..."
+          LOCAL_RESTART_UNBOUND=true
         fi
       fi
       # Update the unbound config host file if it exists
@@ -1824,15 +1825,19 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         if [ "${CURRENT_UNBOUND_HOSTS_HASH}" != "${NEW_UNBOUND_HOSTS_HASH}" ]; then
           curl "${UNBOUND_CONFIG_HOST_URL}" | awk '{print "local-zone: \""$1"\" always_refuse"}' >${UNBOUND_CONFIG_HOST}
           echo "Updating unbound config host file..."
+          LOCAL_RESTART_UNBOUND=true
         fi
       fi
-      # Once everything is completed, restart the unbound service
-      if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
-        systemctl restart unbound
-        echo "Restarting unbound service..."
-      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-        service unbound restart
-        echo "Restarting unbound service..."
+      # Check if the local unbound restart flag is set to true and restart the unbound service
+      if [ "${LOCAL_RESTART_UNBOUND}" == "true" ]; then
+        # Once everything is completed, restart the unbound service
+        if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
+          systemctl restart unbound
+          echo "Restarting unbound service..."
+        elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
+          service unbound restart
+          echo "Restarting unbound service..."
+        fi
       fi
     fi
   }
