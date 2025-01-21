@@ -1173,6 +1173,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         if [ ! -f ${UNBOUND_ROOT_HINTS} ]; then
           # If the root hints file is missing, download it from the specified URL.
           # curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" --create-dirs -o ${UNBOUND_ROOT_HINTS}
+          echo "working if statement"
         fi
         # Installation commands for Unbound vary based on the Linux distribution.
         # The following checks the distribution and installs Unbound accordingly.
