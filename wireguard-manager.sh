@@ -1643,7 +1643,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
       systemctl disable --now wg-quick@${WIREGUARD_PUB_NIC}
     # Check if the current init system is init, and if so, stop the WireGuard service
-    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+    elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
       service wg-quick@${WIREGUARD_PUB_NIC} stop
     fi
     # Bring down the WireGuard interface
@@ -1666,7 +1666,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     # Enable and start the WireGuard service based on the current init system
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
       systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
-    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+    elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
       service wg-quick@${WIREGUARD_PUB_NIC} restart
     fi
   }
@@ -1678,7 +1678,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
       systemctl disable --now wg-quick@${WIREGUARD_PUB_NIC}
       # If the init system is not systemd, check if it is init and stop the WireGuard service
-    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+    elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
       service wg-quick@${WIREGUARD_PUB_NIC} stop
     fi
     # Bring down the WireGuard interface
@@ -1742,7 +1742,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
         systemctl disable --now unbound
       # If the init system is not systemd, check if it is init and stop the Unbound service
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service unbound stop
       fi
       # If a backup of the resolv.conf file exists, restore it and set the immutable flag
@@ -1762,7 +1762,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         if [ "${CURRENT_DISTRO}" == "ubuntu" ]; then
           if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
             systemctl enable --now systemd-resolved
-          elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+          elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
             service systemd-resolved restart
           fi
         fi
@@ -1830,7 +1830,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
         systemctl restart unbound
         echo "Restarting unbound service..."
-      elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+      elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service unbound restart
         echo "Restarting unbound service..."
       fi
@@ -1884,7 +1884,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
       systemctl enable --now wg-quick@${WIREGUARD_PUB_NIC}
     # If the current init system is init, restart the wg-quick service
-    elif [[ "${CURRENT_INIT_SYSTEM}" == *"init"* ]]; then
+    elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
       service wg-quick@${WIREGUARD_PUB_NIC} restart
     fi
   }
