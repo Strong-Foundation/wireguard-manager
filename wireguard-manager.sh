@@ -1169,6 +1169,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # If INSTALL_UNBOUND is true and Unbound is not installed, proceed with installation.
     if [ "${INSTALL_UNBOUND}" == true ]; then
       if [ ! -x "$(command -v unbound)" ]; then
+        # Check if the root hints file does not exist.
+        if [ ! -f ${UNBOUND_ROOT_HINTS} ]; then
+          # If the root hints file is missing, download it from the specified URL.
+          curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" --create-dirs -o ${UNBOUND_ROOT_HINTS}
+        fi
         # Installation commands for Unbound vary based on the Linux distribution.
         # The following checks the distribution and installs Unbound accordingly.
         # For Debian-based distributions:
@@ -1204,13 +1209,6 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       fi
       # Configure Unbound using anchor and root hints.
       unbound-anchor -a ${UNBOUND_ANCHOR}
-      # Download root hints from the specified URL.
-      curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" --create-dirs -o ${UNBOUND_ROOT_HINTS}
-      # Check if the root hints file does not exist.
-      if [ ! -f ${UNBOUND_ROOT_HINTS} ]; then
-        # If the root hints file is missing, attempt to download it again.
-        curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}" --create-dirs -o ${UNBOUND_ROOT_HINTS}
-      fi
       # Configure Unbound settings.
       # The settings are stored in a temporary variable and then written to the Unbound configuration file.
       # If INSTALL_BLOCK_LIST is true, include a block list in the Unbound configuration.
