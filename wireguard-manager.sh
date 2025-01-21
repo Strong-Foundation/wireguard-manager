@@ -1174,6 +1174,14 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
           # If the root hints file is missing, download it from the specified URL.
           LOCAL_UNBOUND_ROOT_HINTS_COPY=$(curl "${UNBOUND_ROOT_SERVER_CONFIG_URL}")
         fi
+        # Check if we are install unbound blocker
+        if [ "${INSTALL_BLOCK_LIST}" == true ]; then
+          # Check if the block list file does not exist.
+          if [ ! -f ${UNBOUND_CONFIG_HOST} ]; then
+            # If the block list file is missing, download it from the specified URL.
+            LOCAL_UNBOUND_BLOCKLIST_COPY=$(curl "${UNBOUND_CONFIG_HOST_URL}" | awk '{print "local-zone: \""$1"\" always_refuse"}')
+          fi
+        fi
         # Installation commands for Unbound vary based on the Linux distribution.
         # The following checks the distribution and installs Unbound accordingly.
         # For Debian-based distributions:
@@ -1210,7 +1218,19 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       # Configure Unbound to use the auto-trust-anchor-file.
       unbound-anchor -a ${UNBOUND_ANCHOR}
       # Configure Unbound to use the root hints file.
-      printf "%s" "${LOCAL_UNBOUND_ROOT_HINTS_COPY}" > ${UNBOUND_ROOT_HINTS}
+      printf "%s" "${LOCAL_UNBOUND_ROOT_HINTS_COPY}" >${UNBOUND_ROOT_HINTS}
+      # If INSTALL_BLOCK_LIST is true, make the unbound directory.
+      if [ "${INSTALL_BLOCK_LIST}" == true ]; then
+        # If the Unbound configuration directory does not exist, create it.
+        if [ ! -d "${UNBOUND_CONFIG_DIRECTORY}" ]; then
+          # Create the Unbound configuration directory.
+          mkdir --parents "${UNBOUND_CONFIG_DIRECTORY}"
+        fi
+      fi
+      # If the block list is enabled, configure Unbound to use the block list.
+      if [ "${INSTALL_BLOCK_LIST}" == true ]; then
+        printf "%s" "${LOCAL_UNBOUND_BLOCKLIST_COPY}" >${UNBOUND_CONFIG_HOST}
+      fi
       # Configure Unbound settings.
       # The settings are stored in a temporary variable and then written to the Unbound configuration file.
       # If INSTALL_BLOCK_LIST is true, include a block list in the Unbound configuration.
@@ -1257,13 +1277,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
 \tqname-minimisation: yes
 \tprefetch-key: yes"
       echo -e "${UNBOUND_TEMP_INTERFACE_INFO}" | awk '!seen[$0]++' >${UNBOUND_CONFIG}
-      # Configure block list if INSTALL_BLOCK_LIST is true.
+      # Check if we are installing a block list.
       if [ "${INSTALL_BLOCK_LIST}" == true ]; then
+        # Include the block list in the Unbound configuration.
         echo -e "\tinclude: ${UNBOUND_CONFIG_HOST}" >>${UNBOUND_CONFIG}
-        if [ ! -d "${UNBOUND_CONFIG_DIRECTORY}" ]; then
-          mkdir --parents "${UNBOUND_CONFIG_DIRECTORY}"
-        fi
-        curl "${UNBOUND_CONFIG_HOST_URL}" | awk '{print "local-zone: \""$1"\" always_refuse"}' >${UNBOUND_CONFIG_HOST}
       fi
       # Update ownership of Unbound's root directory.
       chown --recursive "${USER}":"${USER}" ${UNBOUND_ROOT}
