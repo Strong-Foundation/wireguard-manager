@@ -1219,18 +1219,6 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       unbound-anchor -a ${UNBOUND_ANCHOR}
       # Configure Unbound to use the root hints file.
       printf "%s" "${LOCAL_UNBOUND_ROOT_HINTS_COPY}" >${UNBOUND_ROOT_HINTS}
-      # If INSTALL_BLOCK_LIST is true, make the unbound directory.
-      if [ "${INSTALL_BLOCK_LIST}" == true ]; then
-        # If the Unbound configuration directory does not exist, create it.
-        if [ ! -d "${UNBOUND_CONFIG_DIRECTORY}" ]; then
-          # Create the Unbound configuration directory.
-          mkdir --parents "${UNBOUND_CONFIG_DIRECTORY}"
-        fi
-      fi
-      # If the block list is enabled, configure Unbound to use the block list.
-      if [ "${INSTALL_BLOCK_LIST}" == true ]; then
-        printf "%s" "${LOCAL_UNBOUND_BLOCKLIST_COPY}" >${UNBOUND_CONFIG_HOST}
-      fi
       # Configure Unbound settings.
       # The settings are stored in a temporary variable and then written to the Unbound configuration file.
       # If INSTALL_BLOCK_LIST is true, include a block list in the Unbound configuration.
@@ -1281,6 +1269,19 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       if [ "${INSTALL_BLOCK_LIST}" == true ]; then
         # Include the block list in the Unbound configuration.
         echo -e "\tinclude: ${UNBOUND_CONFIG_HOST}" >>${UNBOUND_CONFIG}
+      fi
+      # If INSTALL_BLOCK_LIST is true, make the unbound directory.
+      if [ "${INSTALL_BLOCK_LIST}" == true ]; then
+        # If the Unbound configuration directory does not exist, create it.
+        if [ ! -d "${UNBOUND_CONFIG_DIRECTORY}" ]; then
+          # Create the Unbound configuration directory.
+          mkdir --parents "${UNBOUND_CONFIG_DIRECTORY}"
+        fi
+      fi
+      # If the block list is enabled, configure Unbound to use the block list.
+      if [ "${INSTALL_BLOCK_LIST}" == true ]; then
+        # Write the block list to the Unbound configuration block file.
+        printf "%s" "${LOCAL_UNBOUND_BLOCKLIST_COPY}" >${UNBOUND_CONFIG_HOST}
       fi
       # Update ownership of Unbound's root directory.
       chown --recursive "${USER}":"${USER}" ${UNBOUND_ROOT}
