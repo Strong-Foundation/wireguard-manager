@@ -46,7 +46,7 @@ variable "region" {
 variable "instance_type" {
   description = "EC2 instance type" # The EC2 instance type to deploy (e.g., t2.micro)
   type        = string              # String type for the instance type
-  default     = "t2.micro"          # Default instance type for the EC2 instance
+  default     = "t3.micro"          # Default instance type for the EC2 instance
 }
 
 variable "ami_id" {
