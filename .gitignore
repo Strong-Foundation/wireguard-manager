@@ -20,3 +20,6 @@ crash.log
 # Ignore private keys and credentials
 *.pem
 *.key
+
+# Ignore WireGuard Config Files
+*.conf
