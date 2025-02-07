@@ -1007,8 +1007,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   function auto_remove_config() {
     # Ask the user if they want to set an expiration date for the peer.
     echo "Do you want to set an expiration date for the peer?"
-    echo "  1) Yes, expire after one year (Recommended)"
-    echo "  2) No, do not expire"
+    echo "  1) No, do not expire (Recommended)"
+    echo "  2) Yes, expire after one year"
     # Keep asking until the user enters 1 or 2.
     until [[ "${AUTOMATIC_CONFIG_REMOVER}" =~ ^[1-2]$ ]]; do
       read -rp "Choose an option for peer expiration [1-2]:" -e -i 1 AUTOMATIC_CONFIG_REMOVER
@@ -1016,6 +1016,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Execute actions based on the user's choice.
     case ${AUTOMATIC_CONFIG_REMOVER} in
     1)
+      # If the user chose not to expire the peer, set the expiration flag to false.
+      AUTOMATIC_WIREGUARD_EXPIRATION=false
+      ;;
+    2)
       # If the user chose to expire the peer, set the expiration flag to true.
       AUTOMATIC_WIREGUARD_EXPIRATION=true
       # Manage the service based on the init system
@@ -1024,10 +1028,6 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
         service ${SYSTEM_CRON_NAME} start
       fi
-      ;;
-    2)
-      # If the user chose not to expire the peer, set the expiration flag to false.
-      AUTOMATIC_WIREGUARD_EXPIRATION=false
       ;;
     esac
   }
