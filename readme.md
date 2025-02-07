@@ -548,7 +548,7 @@ git clone https://github.com/complexorganizations/wireguard-manager /root/wiregu
 2. **Start Debugging**: After cloning, navigate to the script's directory and initiate the debugging process. The script will be executed in debug mode, providing detailed output of each step. This output is redirected to a log file for easier examination. The log file, located in the same directory, stores all the debugging information, making it easy to trace any issues or understand the script's behavior.
 
 ```bash
-bash -x /root/wireguard-manager/wireguard-manager.sh >>/root/wireguard-manager/wireguard-manager.log
+bash -x /root/wireguard-manager/wireguard-manager.sh 2>&1 | tee /root/wireguard-manager/wireguard-manager.log
 ```
 
 Following these steps, you can either quickly modify the code online without cloning or perform a more comprehensive debugging process by cloning the repository to your local machine. Each method offers different benefits depending on your needs and the extent of your work with the WireGuard Manager script.
@@ -577,7 +577,7 @@ Following these steps, you can either quickly modify the code online without clo
 
 5. **Running the Script in Debug Mode**
 
-   - Run the script with `bash -x` to get detailed trace outputs: `bash -x /path/to/local-directory/wireguard-manager/wireguard-manager.sh >> /path/to/local-directory/wireguard-manager.log`
+   - Run the script with `bash -x` to get detailed trace outputs: `bash -x /path/to/local-directory/wireguard-manager/wireguard-manager.sh 2>&1 | tee /path/to/local-directory/wireguard-manager.log`
    - Regularly check the log file for errors or unexpected behavior.
 
 6. **Testing in Different Environments**
