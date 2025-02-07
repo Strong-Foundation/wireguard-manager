@@ -42,19 +42,19 @@ jobs:
 
       # Step 4: Install WireGuard Manager
       - name: Install WireGuard Manager
-        run: sudo ./wireguard-manager.sh --install
+        run: sudo bash -x wireguard-manager.sh --install
 
       # Step 5: Stop WireGuard service
       - name: Stop WireGuard Service
-        run: sudo ./wireguard-manager.sh --stop
+        run: sudo bash -x wireguard-manager.sh --stop
 
       # Step 6: Start WireGuard service
       - name: Start WireGuard Service
-        run: sudo ./wireguard-manager.sh --start
+        run: sudo bash -x wireguard-manager.sh --start
 
       # Step 7: Restart WireGuard service
       - name: Restart WireGuard Service
-        run: sudo ./wireguard-manager.sh --restart
+        run: sudo bash -x wireguard-manager.sh --restart
 
       # Step 8: View WireGuard service status
       - name: View WireGuard Status
@@ -62,23 +62,23 @@ jobs:
 
       # Step 9: Add multiple WireGuard peers (10 in this case)
       - name: Add Multiple WireGuard Peers
-        run: for i in {1..10}; do echo -e "\n" | sudo ./wireguard-manager.sh --add; done
+        run: for i in {1..10}; do echo -e "\n" | sudo bash -x wireguard-manager.sh --add; done
 
       # Step 10: Update dynamic DNS settings
       - name: Update Dynamic DNS Settings
-        run: sudo IP_UPDATE_METHOD=1 ./wireguard-manager.sh --ddns
+        run: sudo IP_UPDATE_METHOD=1 bash -x wireguard-manager.sh --ddns
 
       # Step 11: Create a WireGuard backup
       - name: Create WireGuard Backup
-        run: sudo ./wireguard-manager.sh --backup
+        run: sudo bash -x wireguard-manager.sh --backup
 
       # Step 12: List all WireGuard peers
       - name: List WireGuard Peers
-        run: sudo ./wireguard-manager.sh --list
+        run: sudo bash -x wireguard-manager.sh --list
 
       # Step 13: Update WireGuard Manager
       - name: Update WireGuard Manager
-        run: sudo ./wireguard-manager.sh --update
+        run: sudo bash -x wireguard-manager.sh --update
 
       # Step 14: Allow full access to WireGuard files (for testing or review purposes)
       - name: Allow Access to Files
