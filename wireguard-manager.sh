@@ -70,6 +70,39 @@ function system_information() {
 # Call the system_information function to gather the system details
 system_information
 
+# Function to install either resolvconf or openresolv, depending on the distribution.
+function install_resolvconf_or_openresolv() {
+  # Check if resolvconf is already installed on the system.
+  if [ ! -x "$(command -v resolvconf)" ]; then
+    # If resolvconf is not installed, install it for Ubuntu, Debian, Raspbian, Pop, Kali, Linux Mint, and Neon distributions.
+    if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
+      apt-get install resolvconf -y
+    # For CentOS, RHEL, AlmaLinux, and Rocky distributions, install openresolv.
+    elif { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+      # If the distribution is CentOS 7, enable the copr repository before installing openresolv.
+      if [ "${CURRENT_DISTRO}" == "centos" ] && [ "${CURRENT_DISTRO_MAJOR_VERSION}" == 7 ]; then
+        yum copr enable macieks/openresolv -y
+      fi
+      yum install openresolv -y
+    # For Fedora and Oracle Linux distributions, install openresolv.
+    elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
+      yum install openresolv -y
+    # For Arch, Arch ARM, and Manjaro distributions, install resolvconf.
+    elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
+      pacman -Su --noconfirm --needed resolvconf
+    # For Alpine Linux, install resolvconf.
+    elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
+      apk add resolvconf
+    # For FreeBSD, install resolvconf.
+    elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
+      pkg install resolvconf
+    fi
+  fi
+}
+
+# Invoke the function to install either resolvconf or openresolv, depending on the distribution.
+install_resolvconf_or_openresolv
+
 # Define a function to check system requirements and install missing packages
 function installing_system_requirements() {
   # Check if the current Linux distribution is one of the supported distributions
@@ -1078,39 +1111,6 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
 
   # Invoke the function to verify kernel version and install necessary kernel headers.
   install_kernel_headers
-
-  # Function to install either resolvconf or openresolv, depending on the distribution.
-  function install_resolvconf_or_openresolv() {
-    # Check if resolvconf is already installed on the system.
-    if [ ! -x "$(command -v resolvconf)" ]; then
-      # If resolvconf is not installed, install it for Ubuntu, Debian, Raspbian, Pop, Kali, Linux Mint, and Neon distributions.
-      if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
-        apt-get install resolvconf -y
-      # For CentOS, RHEL, AlmaLinux, and Rocky distributions, install openresolv.
-      elif { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
-        # If the distribution is CentOS 7, enable the copr repository before installing openresolv.
-        if [ "${CURRENT_DISTRO}" == "centos" ] && [ "${CURRENT_DISTRO_MAJOR_VERSION}" == 7 ]; then
-          yum copr enable macieks/openresolv -y
-        fi
-        yum install openresolv -y
-      # For Fedora and Oracle Linux distributions, install openresolv.
-      elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
-        yum install openresolv -y
-      # For Arch, Arch ARM, and Manjaro distributions, install resolvconf.
-      elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
-        pacman -Su --noconfirm --needed resolvconf
-      # For Alpine Linux, install resolvconf.
-      elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
-        apk add resolvconf
-      # For FreeBSD, install resolvconf.
-      elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
-        pkg install resolvconf
-      fi
-    fi
-  }
-
-  # Invoke the function to install either resolvconf or openresolv, depending on the distribution.
-  install_resolvconf_or_openresolv
 
   # Function to install the WireGuard server if it's not already installed.
   function install_wireguard_server() {
