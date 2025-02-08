@@ -127,32 +127,32 @@ To ensure the successful installation of the WireGuard Manager script on various
 
 ```bash
 sudo apt update
-sudo apt install curl sudo bash resolvconf
+sudo apt install curl sudo bash resolvconf -y
 ```
 
 #### Red Hat-based Systems (e.g., CentOS, RHEL, Fedora):
 
 ```bash
-sudo yum install curl sudo bash resolvconf
+sudo yum install curl sudo bash resolvconf -y
 ```
 
 or
 
 ```bash
-sudo dnf install curl sudo bash resolvconf
+sudo dnf install curl sudo bash resolvconf -y
 ```
 
 #### Arch-based Systems (e.g., Arch Linux, Manjaro):
 
 ```bash
-sudo pacman -Sy curl sudo bash resolvconf
+sudo pacman -Sy curl sudo bash resolvconf -y
 ```
 
 #### Alpine Linux:
 
 ```bash
 sudo apk update
-sudo apk add curl sudo bash resolvconf
+sudo apk add curl sudo bash resolvconf -y
 ```
 
 #### Other Distributions:
