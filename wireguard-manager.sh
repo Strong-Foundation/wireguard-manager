@@ -169,7 +169,7 @@ function virt_check() {
   # on is supported. If it is not supported, the script will print an error
   # message and exit.
   case ${CURRENT_SYSTEM_VIRTUALIZATION} in
-  "kvm" | "none" | "qemu" | "lxc" | "microsoft" | "vmware" | "xen" | "amazon" | "docker") ;;
+  "amazon" | "docker" | "google" | "kvm" | "lxc" | "microsoft" | "none" | "qemu" | "vmware" | "xen") ;;
   *)
     echo "Error: the ${CURRENT_SYSTEM_VIRTUALIZATION} virtualization is currently not supported. Please stay tuned for future updates."
     exit 1 # Exit the script with an error code.
