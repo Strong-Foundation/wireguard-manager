@@ -1188,12 +1188,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         if { [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
           apt-get install unbound unbound-host unbound-anchor -y
           # If the distribution is Ubuntu, disable systemd-resolved.
-          if [ "${CURRENT_DISTRO}" == "ubuntu" ]; then
-            if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
-              systemctl disable --now systemd-resolved
-            elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
-              service systemd-resolved stop
-            fi
+          if [[ "${CURRENT_INIT_SYSTEM}" == "systemd" ]]; then
+            systemctl disable --now systemd-resolved
+          elif [[ "${CURRENT_INIT_SYSTEM}" == "sysvinit" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "init" ]] || [[ "${CURRENT_INIT_SYSTEM}" == "upstart" ]]; then
+            service systemd-resolved stop
           fi
         # For CentOS, RHEL, AlmaLinux, and Rocky:
         elif { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
