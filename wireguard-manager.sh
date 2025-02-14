@@ -613,6 +613,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     2)
       # Prompt the user to manually input the NIC.
       read -rp "Custom NIC:" SERVER_PUB_NIC
+      # Input validation loop to ensure the name is alphanumeric.
+      while [[ ! "$SERVER_PUB_NIC" =~ ^[a-zA-Z0-9]+$ ]]; do
+        echo "Error: The NIC name must be alphanumeric."
+        read -rp "Custom NIC:" SERVER_PUB_NIC
+      done
       # If the user doesn't provide an input, use the IP route command to identify the NIC.
       if [ -z "${SERVER_PUB_NIC}" ]; then
         SERVER_PUB_NIC="$(ip route | grep default | head --lines=1 | cut --delimiter=" " --fields=5)"
@@ -687,8 +692,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       ;;
     2)
       # If the user chose the custom option, prompt them to enter a custom interval.
-      until [[ "${NAT_CHOICE}" =~ ^[0-9]+$ ]] && [ "${NAT_CHOICE}" -ge 1 ] && [ "${NAT_CHOICE}" -le 65535 ]; do
-        read -rp "Custom NAT [1-65535]:" NAT_CHOICE
+      until [[ "${NAT_CHOICE}" =~ ^[0-9]+$ ]] && [ "${NAT_CHOICE}" -ge 1 ] && [ "${NAT_CHOICE}" -le 300 ]; do
+        read -rp "Custom NAT [1-300]:" NAT_CHOICE
       done
       # If no custom interval is entered, set the NAT_CHOICE variable to the default of 25 seconds.
       if [ -z "${NAT_CHOICE}" ]; then
