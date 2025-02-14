@@ -1632,10 +1632,14 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     else
       # Prompt the user to choose a WireGuard peer to remove
       echo "Which WireGuard peer would you like to remove?"
-
       # List all the peers' names with numbers
       PEERS=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
-      PS3="Select a peer (enter the number): "
+      # Check if there are no peers
+      if [ -z "$PEERS" ]; then
+        echo "Error: No WireGuard peers found."
+        exit 1
+      fi
+      SELECT_INPUT_NUMBER="Select a peer (enter the number):"
       select PEER in $PEERS; do
         if [ -n "$PEER" ]; then
           REMOVECLIENT="$PEER"
@@ -1647,6 +1651,11 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     fi
     # Extract the public key of the selected peer from the configuration file
     CLIENTKEY=$(sed -n "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/p" ${WIREGUARD_CONFIG} | grep PublicKey | cut --delimiter=" " --fields=3)
+    # If no public key is found, display an error and exit
+    if [ -z "$CLIENTKEY" ]; then
+      echo "Error: Peer '${REMOVECLIENT}' not found in the WireGuard configuration."
+      exit 1
+    fi
     # Remove the selected peer from the WireGuard interface using the extracted public key
     wg set ${WIREGUARD_PUB_NIC} peer "${CLIENTKEY}" remove
     # Remove the selected peer's configuration block from the WireGuard configuration file
