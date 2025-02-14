@@ -1648,7 +1648,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
           break                # Exit the 'select' loop
         else
           # If the selection is invalid, ask the user to choose a valid number
-          echo "Invalid selection. Please choose a number between 1 and $(echo $PEERS | wc -w)."
+          echo "Invalid selection. Please choose a number between 1 and $(echo "$PEERS" | wc -w)."
         fi
       done
     fi
