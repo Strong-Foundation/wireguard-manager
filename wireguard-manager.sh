@@ -1639,13 +1639,17 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         echo "Error: No WireGuard peers found."
         exit 1
       fi
+      # Prompt message asking the user to select a peer
       SELECT_INPUT_NUMBER="Select a peer (enter the number):"
+      # Use the 'select' command to display available peers and allow the user to choose one
       select PEER in $PEERS; do
+        # If a valid peer is selected
         if [ -n "$PEER" ]; then
-          REMOVECLIENT="$PEER"
-          break
+          REMOVECLIENT="$PEER" # Set the peer to be removed
+          break                # Exit the 'select' loop
         else
-          echo "Invalid selection. Please choose a valid number."
+          # If the selection is invalid, ask the user to choose a valid number
+          echo "Invalid selection. Please choose a number between 1 and $(echo $PEERS | wc -w)."
         fi
       done
     fi
