@@ -726,15 +726,15 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       ;;
     2)
       # If the user chose the custom option, prompt them to enter a custom MTU for Interface and Peer.
-      until [[ "${INTERFACE_MTU_CHOICE}" =~ ^[0-9]+$ ]] && [ "${INTERFACE_MTU_CHOICE}" -ge 1 ] && [ "${INTERFACE_MTU_CHOICE}" -le 65535 ]; do
-        read -rp "Custom Interface MTU [1-65535]:" INTERFACE_MTU_CHOICE
+      until [[ "${INTERFACE_MTU_CHOICE}" =~ ^[0-9]+$ ]] && [ "${INTERFACE_MTU_CHOICE}" -ge 1 ] && [ "${INTERFACE_MTU_CHOICE}" -le 3000 ]; do
+        read -rp "Custom Interface MTU [1-3000]:" INTERFACE_MTU_CHOICE
       done
       # If no custom Interface MTU is entered, set the INTERFACE_MTU_CHOICE variable to the default of 1420.
       if [ -z "${INTERFACE_MTU_CHOICE}" ]; then
         INTERFACE_MTU_CHOICE="1420"
       fi
-      until [[ "${PEER_MTU_CHOICE}" =~ ^[0-9]+$ ]] && [ "${PEER_MTU_CHOICE}" -ge 1 ] && [ "${PEER_MTU_CHOICE}" -le 65535 ]; do
-        read -rp "Custom Peer MTU [1-65535]:" PEER_MTU_CHOICE
+      until [[ "${PEER_MTU_CHOICE}" =~ ^[0-9]+$ ]] && [ "${PEER_MTU_CHOICE}" -ge 1 ] && [ "${PEER_MTU_CHOICE}" -le 3000 ]; do
+        read -rp "Custom Peer MTU [1-3000]:" PEER_MTU_CHOICE
       done
       # If no custom Peer MTU is entered, set the PEER_MTU_CHOICE variable to the default of 1280.
       if [ -z "${PEER_MTU_CHOICE}" ]; then
