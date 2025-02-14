@@ -1027,6 +1027,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       # Read the user's input, offering a random string as the default name.
       read -rp "Client name:" -e -i "$(openssl rand -hex 5)" CLIENT_NAME
     fi
+    # Input validation loop to ensure the name is alphanumeric.
+    while [[ ! "$CLIENT_NAME" =~ ^[a-zA-Z0-9]+$ ]]; do
+      echo "Invalid name. The name should contain only letters and numbers (no spaces or special characters)."
+      read -rp "Client name:" -e -i "$(openssl rand -hex 5)" CLIENT_NAME
+    done
     # If no name is provided by the user, assign a random string as the name.
     if [ -z "${CLIENT_NAME}" ]; then
       CLIENT_NAME="$(openssl rand -hex 5)"
@@ -1432,6 +1437,11 @@ else
       echo "Let's name the WireGuard Peer. Use one word only, no special characters, no spaces."
       read -rp "New client peer:" -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
     fi
+    # Input validation loop to ensure the name is alphanumeric.
+    while [[ ! "$NEW_CLIENT_NAME" =~ ^[a-zA-Z0-9]+$ ]]; do
+      echo "Invalid name. The name should contain only letters and numbers (no spaces or special characters)."
+      read -rp "Client name:" -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
+    done
     # If no client name is provided, use openssl to generate a random name
     if [ -z "${NEW_CLIENT_NAME}" ]; then
       NEW_CLIENT_NAME="$(openssl rand -hex 5)"
