@@ -1626,9 +1626,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
 
   # Function to remove a WireGuard peer
   function remove_wireguard_peer() {
-    # If the user passed the peer name as an argument, use that
-    if [ -n "$1" ]; then
-      REMOVECLIENT="$1"
+    # Check if the user passed the name of the client to remove.
+    if [ -n "$REMOVECLIENT" ]; then
+      REMOVECLIENT="$REMOVECLIENT"
     else
       # Prompt the user to choose a WireGuard peer to remove
       echo "Which WireGuard peer would you like to remove?"
