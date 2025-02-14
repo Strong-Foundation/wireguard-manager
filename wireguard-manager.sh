@@ -1626,10 +1626,8 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
 
   # Function to remove a WireGuard peer
   function remove_wireguard_peer() {
-    # Check if the user passed the name of the client to remove.
-    if [ -n "$REMOVECLIENT" ]; then
-      REMOVECLIENT="$REMOVECLIENT"
-    else
+    # Check if the REMOVECLIENT variable is empty
+    if [ -z "$REMOVECLIENT" ]; then
       # Prompt the user to choose a WireGuard peer to remove
       echo "Which WireGuard peer would you like to remove?"
       # List all the peers' names with numbers
@@ -1965,7 +1963,8 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       # Add the clients to the USER_LIST array
       for CLIENT_LIST_ARRAY in ${COMPLETE_CLIENT_LIST}; do
         USER_LIST[ADD_CONTENT]=${CLIENT_LIST_ARRAY}
-        ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
+        # ADD_CONTENT=$(("${ADD_CONTENT}" + 1))
+        (( ADD_CONTENT++ ))
       done
       # Loop through the clients in the USER_LIST array
       for CLIENT_NAME in "${USER_LIST[@]}"; do
