@@ -1633,15 +1633,14 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       # Prompt the user to choose a WireGuard peer to remove
       echo "Which WireGuard peer would you like to remove?"
       # List all the peers' names with numbers
-      PEERS=$(grep start ${WIREGUARD_CONFIG} | cut --delimiter=" " --fields=2)
+      PEERS=$(grep start "${WIREGUARD_CONFIG}" | cut --delimiter=" " --fields=2)
       # Check if there are no peers
       if [ -z "$PEERS" ]; then
         echo "Error: No WireGuard peers found."
         exit 1
       fi
-      # Prompt message asking the user to select a peer
-      SELECT_INPUT_NUMBER="Select a peer (enter the number):"
-      # Use the 'select' command to display available peers and allow the user to choose one
+      # Set a custom prompt message for the select command
+      PS3="Select a peer (enter the number): "
       select PEER in $PEERS; do
         # If a valid peer is selected
         if [ -n "$PEER" ]; then
@@ -1654,22 +1653,22 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       done
     fi
     # Extract the public key of the selected peer from the configuration file
-    CLIENTKEY=$(sed -n "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/p" ${WIREGUARD_CONFIG} | grep PublicKey | cut --delimiter=" " --fields=3)
+    CLIENTKEY=$(sed -n "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/p" "${WIREGUARD_CONFIG}" | grep PublicKey | cut --delimiter=" " --fields=3)
     # If no public key is found, display an error and exit
     if [ -z "$CLIENTKEY" ]; then
       echo "Error: Peer '${REMOVECLIENT}' not found in the WireGuard configuration."
       exit 1
     fi
     # Remove the selected peer from the WireGuard interface using the extracted public key
-    wg set ${WIREGUARD_PUB_NIC} peer "${CLIENTKEY}" remove
+    wg set "${WIREGUARD_PUB_NIC}" peer "${CLIENTKEY}" remove
     # Remove the selected peer's configuration block from the WireGuard configuration file
-    sed --in-place "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/d" ${WIREGUARD_CONFIG}
+    sed --in-place "/\# ${REMOVECLIENT} start/,/\# ${REMOVECLIENT} end/d" "${WIREGUARD_CONFIG}"
     # If the selected peer has a configuration file in the client path, remove it
     if [ -f "${WIREGUARD_CLIENT_PATH}/${REMOVECLIENT}-${WIREGUARD_PUB_NIC}.conf" ]; then
-      rm --force ${WIREGUARD_CLIENT_PATH}/"${REMOVECLIENT}"-${WIREGUARD_PUB_NIC}.conf
+      rm --force "${WIREGUARD_CLIENT_PATH}/${REMOVECLIENT}-${WIREGUARD_PUB_NIC}.conf"
     fi
     # Reload the WireGuard interface configuration to apply the changes
-    wg addconf ${WIREGUARD_PUB_NIC} <(wg-quick strip ${WIREGUARD_PUB_NIC})
+    wg addconf "${WIREGUARD_PUB_NIC}" <(wg-quick strip "${WIREGUARD_PUB_NIC}")
     # Remove any cronjobs associated with the removed peer
     crontab -l | grep --invert-match "${REMOVECLIENT}" | crontab -
   }
