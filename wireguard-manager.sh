@@ -78,7 +78,7 @@ function install_resolvconf_or_openresolv() {
     if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ]; }; then
       apt-get install resolvconf -y
     # For CentOS, RHEL, AlmaLinux, and Rocky distributions, install openresolv.
-    elif { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+    elif { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ]; }; then
       # If the distribution is CentOS 7, enable the copr repository before installing openresolv.
       if [ "${CURRENT_DISTRO}" == "centos" ] && [ "${CURRENT_DISTRO_MAJOR_VERSION}" == 7 ]; then
         yum copr enable macieks/openresolv -y
@@ -106,7 +106,7 @@ install_resolvconf_or_openresolv
 # Define a function to check system requirements and install missing packages
 function installing_system_requirements() {
   # Check if the current Linux distribution is one of the supported distributions
-  if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ] || [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ] || [ "${CURRENT_DISTRO}" == "alpine" ] || [ "${CURRENT_DISTRO}" == "freebsd" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
+  if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ] || [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ] || [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ] || [ "${CURRENT_DISTRO}" == "alpine" ] || [ "${CURRENT_DISTRO}" == "freebsd" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
     # If the distribution is supported, check if the required packages are already installed
     if { [ ! -x "$(command -v curl)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v jq)" ] || [ ! -x "$(command -v ip)" ] || [ ! -x "$(command -v lsof)" ] || [ ! -x "$(command -v cron)" ] || [ ! -x "$(command -v awk)" ] || [ ! -x "$(command -v ps)" ] || [ ! -x "$(command -v grep)" ] || [ ! -x "$(command -v qrencode)" ] || [ ! -x "$(command -v sed)" ] || [ ! -x "$(command -v zip)" ] || [ ! -x "$(command -v unzip)" ] || [ ! -x "$(command -v openssl)" ] || [ ! -x "$(command -v nft)" ] || [ ! -x "$(command -v ifup)" ] || [ ! -x "$(command -v chattr)" ] || [ ! -x "$(command -v gpg)" ] || [ ! -x "$(command -v systemd-detect-virt)" ]; }; then
       # If any of the required packages are missing, begin the installation process for the respective distribution
@@ -114,7 +114,7 @@ function installing_system_requirements() {
         # For Debian-based distributions, update package lists and install required packages
         apt-get update
         apt-get install curl coreutils jq iproute2 lsof cron gawk procps grep qrencode sed zip unzip openssl nftables ifupdown e2fsprogs gnupg systemd -y
-      elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+      elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ]; }; then
         # For Red Hat-based distributions, check for updates and install required packages
         yum check-update
         # For CentOS 7+, install EPEL and ELRepo repositories if needed
@@ -305,7 +305,7 @@ case $(shuf -i 1-1 -n 1) in
 esac
 # Check if the CURRENT_DISTRO variable matches any of the following distros:
 # fedora, centos, rhel, almalinux, or rocky
-if { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+if { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ]; }; then
   # If the condition is true, set the SYSTEM_CRON_NAME variable to "crond"
   SYSTEM_CRON_NAME="crond"
 # If the CURRENT_DISTRO variable matches any of the following distros:
@@ -1112,7 +1112,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
         yum check-update
         yum install kernel-headers-"$(uname --kernel-release)" kernel-devel-"$(uname --kernel-release)" -y
-      elif { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
+      elif { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ]; }; then
         yum check-update
         yum install kernel-headers-"$(uname --kernel-release)" kernel-devel-"$(uname --kernel-release)" -y
       fi
@@ -1167,6 +1167,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         yum config-manager --enable ol"${CURRENT_DISTRO_MAJOR_VERSION}"_developer_UEKR6
         yum config-manager --save --setopt=ol"${CURRENT_DISTRO_MAJOR_VERSION}"_developer_UEKR6.includepkgs='wireguard-tools*'
         yum install wireguard-tools -y
+      # Install wireguard on amazon linux
+      elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
+        amazon-linux-extras install epel -y
+        yum install wireguard-tools -y
       fi
     fi
   }
@@ -1220,6 +1224,9 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
           pkg install unbound unbound-host unbound-anchor
         # For Oracle Linux:
         elif [ "${CURRENT_DISTRO}" == "ol" ]; then
+          yum install unbound unbound-host unbound-anchor -y
+        # For Amazon Linux:
+        elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
           yum install unbound unbound-host unbound-anchor -y
         fi
       fi
@@ -1697,6 +1704,8 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       pkg check wireguard
     elif [ "${CURRENT_DISTRO}" == "ol" ]; then
       yum reinstall wireguard-tools -y
+    elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
+      yum reinstall wireguard-tools -y
     fi
     # Enable and start the WireGuard service based on the current init system
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
@@ -1762,6 +1771,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     # For Oracle Linux distribution
     elif [ "${CURRENT_DISTRO}" == "ol" ]; then
       yum remove wireguard qrencode -y
+    # For Amazon Linux distribution
+    elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
+      yum remove wireguard qrencode -y
     fi
     # Delete WireGuard backup
     if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
@@ -1814,6 +1826,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       # For FreeBSD distribution
       elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
         pkg delete unbound
+      # For Amazon Linux distribution
+      elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
+        yum remove unbound -y
       fi
       # Remove Unbound root directory if it exists
       if [ -d "${UNBOUND_ROOT}" ]; then
