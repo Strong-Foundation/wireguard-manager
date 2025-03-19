@@ -122,7 +122,7 @@ function installing_system_requirements() {
         yum check-update
         yum install epel-release elrepo-release -y
         # Install necessary packages for Red Hat-based distributions
-        yum install curl coreutils jq iproute lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y
+        yum install curl coreutils jq iproute lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y --allowerasing
       elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
         # Check for updates.
         pacman -Sy
@@ -144,7 +144,7 @@ function installing_system_requirements() {
       elif [ "${CURRENT_DISTRO}" == "ol" ]; then
         # For Oracle Linux (OL), check for updates and install required packages
         yum check-update
-        yum install curl coreutils jq iproute lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y
+        yum install curl coreutils jq iproute lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y --allowerasing
       fi
     fi
   else
