@@ -217,7 +217,8 @@ kernel_check
 # The following function checks if the current init system is one of the allowed options.
 function check_current_init_system() {
   # Get the current init system by checking the process name of PID 1.
-  CURRENT_INIT_SYSTEM=$(ps -p 1 -o comm= | awk -F'/' '{print $NF}') # Extract only the command name without the full path.
+  CURRENT_INIT_SYSTEM=$(ps -p 1 -o comm --no-headers) # Extract only the command name without the full path.
+  # CURRENT_INIT_SYSTEM=$(ps -p 1 -o comm= | awk -F'/' '{print $NF}') # Old methord to extract the command name.
   # Convert to lowercase to make the comparison case-insensitive.
   CURRENT_INIT_SYSTEM=$(echo "$CURRENT_INIT_SYSTEM" | tr '[:upper:]' '[:lower:]')
   # Log the detected init system (optional for debugging purposes).
