@@ -9,12 +9,12 @@ on:
   # Trigger when a pull request is created or updated that modifies a .sh file in the 'test' folder
   pull_request:
     paths:
-      - "test/**/*.sh" # Only trigger on changes to .sh files inside the 'test' folder or its subfolders
+      - "assets/test/**/*.sh" # Only trigger on changes to .sh files inside the 'test' folder or its subfolders
 
   # Trigger when a push is made that modifies a .sh file in the 'test' folder
   push:
     paths:
-      - "test/**/*.sh" # Only trigger on changes to .sh files inside the 'test' folder or its subfolders
+      - "assets/test/**/*.sh" # Only trigger on changes to .sh files inside the 'test' folder or its subfolders
 
   # Allow the workflow to be triggered manually via the GitHub Actions UI
   workflow_dispatch:
