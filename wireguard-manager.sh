@@ -126,7 +126,7 @@ function installing_system_requirements() {
           yum install yum-plugin-elrepo -y
         fi
         # Install necessary packages for Red Hat-based distributions
-        yum install curl coreutils jq iproute lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y
+        yum install curl coreutils jq iproute2 lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y
       elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
         # For Arch-based distributions, update the keyring and install required packages
         pacman -Sy --noconfirm archlinux-keyring
