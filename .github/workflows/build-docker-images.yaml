@@ -52,8 +52,7 @@ jobs:
 
       # Step 8: Build the Docker image from Dockerfile.centos
       - name: Build Docker image from Dockerfile.centos
-        run: docker buildx build --build-arg DOCKER_BUILDKIT=1 --dns 1.1.1.1 --dns 1.0.0.1 -t centos-image -f assets/Dockerfile/Dockerfile.centos . # Build the image with the tag 'centos-image'
-        # run: docker build --dns 1.1.1.1 --dns 1.0.0.1 -t centos-image -f assets/Dockerfile/Dockerfile.centos . # Build the image with the tag 'centos-image'
+        run: docker build --dns 1.1.1.1 --dns 1.0.0.1 -t centos-image -f assets/Dockerfile/Dockerfile.centos . # Build the image with the tag 'centos-image'
 
       # Step 9: Run the Docker container for centos image
       - name: Run Docker container for centos
