@@ -89,6 +89,9 @@ function install_resolvconf_or_openresolv() {
       yum install openresolv -y
     # For Arch, Arch ARM, and Manjaro distributions, install resolvconf.
     elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
+      # Check for updates.
+      pacman -Sy
+      # Install resolvconf.
       pacman -Su --noconfirm --needed resolvconf
     # For Alpine Linux, install resolvconf.
     elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
@@ -128,8 +131,14 @@ function installing_system_requirements() {
         # Install necessary packages for Red Hat-based distributions
         yum install curl coreutils jq iproute2 lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y
       elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
+        # Check for updates.
+        pacman -Sy
+        # Initialize the GPG keyring.
+        pacman-key --init
+        # Populate the keyring with the default Arch Linux keys
+        pacman-key --populate archlinux
         # For Arch-based distributions, update the keyring and install required packages
-        pacman -Sy --noconfirm archlinux-keyring
+        pacman -Sy --noconfirm --needed archlinux-keyring
         pacman -Su --noconfirm --needed curl coreutils jq iproute2 lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables ifupdown e2fsprogs gnupg systemd
       elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
         # For Alpine Linux, update package lists and install required packages
