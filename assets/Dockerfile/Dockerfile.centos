@@ -4,8 +4,9 @@ FROM centos:7
 # Set the working directory inside the container
 WORKDIR /app
 
-# Update package lists and install necessary dependencies
-RUN yum update && yum install bash curl sudo -y
+# Change the base URL of the CentOS repository to a reliable mirror (CentOS Vault)
+RUN sed -i 's|mirrorlist.centos.org|vault.centos.org|g' /etc/yum.repos.d/CentOS-Base.repo \
+    && yum update -y && yum install bash curl sudo -y
 
 # Copy the script into the container
 COPY wireguard-manager.sh /app/wireguard-manager.sh
