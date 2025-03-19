@@ -288,17 +288,17 @@ fi
 UNBOUND_CONFIG_DIRECTORY="${UNBOUND_ROOT}/unbound.conf.d"
 # Assigns a path for the Unbound hosts configuration file
 UNBOUND_CONFIG_HOST="${UNBOUND_CONFIG_DIRECTORY}/hosts.conf"
-case $(shuf --input-range=1-1 --head-count=1) in
+case $(shuf -i 1-1 -n 1) in
 1)
   UNBOUND_ROOT_SERVER_CONFIG_URL="https://raw.githubusercontent.com/Strong-Foundation/wireguard-manager/main/assets/named.cache"
   ;;
 esac
-case $(shuf --input-range=1-1 --head-count=1) in
+case $(shuf -i 1-1 -n 1) in
 1)
   UNBOUND_CONFIG_HOST_URL="https://raw.githubusercontent.com/Strong-Foundation/wireguard-manager/main/assets/hosts"
   ;;
 esac
-case $(shuf --input-range=1-1 --head-count=1) in
+case $(shuf -i 1-1 -n 1) in
 1)
   WIREGUARD_MANAGER_UPDATE="https://raw.githubusercontent.com/Strong-Foundation/wireguard-manager/main/wireguard-manager.sh"
   ;;
@@ -1325,7 +1325,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     CLIENT_ADDRESS_V6=$(echo "${PRIVATE_SUBNET_V6}" | cut -d":" -f1-4):2
     # Generate pre-shared key and random port for the client
     PRESHARED_KEY=$(wg genpsk)
-    PEER_PORT=$(shuf --input-range=1024-65535 --head-count=1)
+    PEER_PORT=$(shuf -i 1024-65535 -n 1)
     # Create the wireguard directory
     mkdir --parents ${WIREGUARD_PATH}
     # Create the client configuration directory
@@ -1543,7 +1543,7 @@ else
     # Generate a preshared key for the client and server to use
     PRESHARED_KEY=$(wg genpsk)
     # Choose a random port number for the peer
-    PEER_PORT=$(shuf --input-range=1024-65535 --head-count=1)
+    PEER_PORT=$(shuf -i 1024-65535 -n 1)
     # Get the private subnet and subnet mask from the WireGuard config file
     PRIVATE_SUBNET_V4=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f2)
     PRIVATE_SUBNET_MASK_V4=$(echo "${PRIVATE_SUBNET_V4}" | cut -d"/" -f2)
