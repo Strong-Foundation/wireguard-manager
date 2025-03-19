@@ -120,7 +120,7 @@ function installing_system_requirements() {
       elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ]; }; then
         # For Red Hat-based distributions, check for updates and install required packages
         yum check-update
-        if [ "${CURRENT_DISTRO}" == "almalinux" ]; then
+        if { [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ]; }; then
           # Install necessary packages for AlmaLinux
           yum install epel-release elrepo-release -y
         else
