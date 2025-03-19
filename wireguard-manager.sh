@@ -605,7 +605,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     case ${SERVER_PUB_NIC_SETTINGS} in
     1)
       # Use the IP route command to automatically identify the NIC.
-      SERVER_PUB_NIC="$(ip route | grep default | head --lines=1 | cut -d" " -f5)"
+      SERVER_PUB_NIC="$(ip route | grep default | head -n 1 | cut -d" " -f5)"
       # If no NIC is found, exit the script with an error message.
       if [ -z "${SERVER_PUB_NIC}" ]; then
         echo "Error: Unable to identify your server's public network interface."
@@ -622,7 +622,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       done
       # If the user doesn't provide an input, use the IP route command to identify the NIC.
       if [ -z "${SERVER_PUB_NIC}" ]; then
-        SERVER_PUB_NIC="$(ip route | grep default | head --lines=1 | cut -d" " -f5)"
+        SERVER_PUB_NIC="$(ip route | grep default | head -n 1 | cut -d" " -f5)"
       fi
       ;;
     esac
@@ -1470,7 +1470,7 @@ else
       LASTIPV6=1
     fi
     # Find the smallest used IPv4 address in the WireGuard configuration file
-    SMALLEST_USED_IPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f1 | cut -d"." -f4 | sort --numeric-sort | head --lines=1)
+    SMALLEST_USED_IPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f1 | cut -d"." -f4 | sort --numeric-sort | head -n 1)
     # Find the largest used IPv4 address in the WireGuard configuration file
     LARGEST_USED_IPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f1 | cut -d"." -f4 | sort --numeric-sort | tail --lines=1)
     # Create a list of used IPv4 addresses in the WireGuard configuration file
@@ -1484,7 +1484,7 @@ else
       SMALLEST_USED_IPV4=$((SMALLEST_USED_IPV4 + 1))
     done
     # Find the smallest used IPv6 address in the WireGuard configuration file
-    SMALLEST_USED_IPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"," -f2 | cut -d"/" -f1 | cut -d":" -f5 | sort --numeric-sort | head --lines=1)
+    SMALLEST_USED_IPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"," -f2 | cut -d"/" -f1 | cut -d":" -f5 | sort --numeric-sort | head -n 1)
     # Find the largest used IPv6 address in the WireGuard configuration file
     LARGEST_USED_IPV6=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"," -f2 | cut -d"/" -f1 | cut -d":" -f5 | sort --numeric-sort | tail --lines=1)
     # Create a list of used IPv6 addresses in the WireGuard configuration file
@@ -1499,13 +1499,13 @@ else
     done
     # If unused IPv4 and IPv6 addresses are found, set them as the last IPv4 and IPv6 addresses
     if { [ -n "${FIND_UNUSED_IPV4}" ] && [ -n "${FIND_UNUSED_IPV6}" ]; }; then
-      LASTIPV4=$(echo "${FIND_UNUSED_IPV4}" | head --lines=1)
-      LASTIPV6=$(echo "${FIND_UNUSED_IPV6}" | head --lines=1)
+      LASTIPV4=$(echo "${FIND_UNUSED_IPV4}" | head -n 1)
+      LASTIPV6=$(echo "${FIND_UNUSED_IPV6}" | head -n 1)
     fi
     if { [ "${LASTIPV4}" -ge 255 ] && [ "${LASTIPV6}" -ge 255 ]; }; then
       # Get the current IPv4 and IPv6 ranges from the WireGuard config file
-      CURRENT_IPV4_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f2)
-      CURRENT_IPV6_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f3)
+      CURRENT_IPV4_RANGE=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f2)
+      CURRENT_IPV6_RANGE=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f3)
       # Get the last octet of the IPv4 range and the fifth hextet of the IPv6 range
       IPV4_BEFORE_BACKSLASH=$(echo "${CURRENT_IPV4_RANGE}" | cut -d"/" -f1 | cut -d"." -f4)
       IPV6_BEFORE_BACKSLASH=$(echo "${CURRENT_IPV6_RANGE}" | cut -d"/" -f1 | cut -d":" -f5)
@@ -1513,16 +1513,16 @@ else
       IPV4_AFTER_FIRST=$(echo "${CURRENT_IPV4_RANGE}" | cut -d"/" -f1 | cut -d"." -f2)
       IPV6_AFTER_FIRST=$(echo "${CURRENT_IPV6_RANGE}" | cut -d"/" -f1 | cut -d":" -f2)
       # Get the second and third octets of the IPv4 range and the third and fourth hextets of the IPv6 range
-      SECOND_IPV4_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f2 | cut -d"/" -f1 | cut -d"." -f2)
-      SECOND_IPV6_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f1 | cut -d":" -f2)
-      THIRD_IPV4_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f2 | cut -d"/" -f1 | cut -d"." -f3)
-      THIRD_IPV6_IN_RANGE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f1 | cut -d":" -f3)
+      SECOND_IPV4_IN_RANGE=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f2 | cut -d"/" -f1 | cut -d"." -f2)
+      SECOND_IPV6_IN_RANGE=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f1 | cut -d":" -f2)
+      THIRD_IPV4_IN_RANGE=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f2 | cut -d"/" -f1 | cut -d"." -f3)
+      THIRD_IPV6_IN_RANGE=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f1 | cut -d":" -f3)
       # Calculate the next IPv4 and IPv6 ranges
       NEXT_IPV4_RANGE=$((THIRD_IPV4_IN_RANGE + 1))
       NEXT_IPV6_RANGE=$((THIRD_IPV6_IN_RANGE + 1))
       # Get the CIDR notation for the current IPv4 and IPv6 ranges
-      CURRENT_IPV4_RANGE_CIDR=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f2 | cut -d"/" -f2)
-      CURRENT_IPV6_RANGE_CIDR=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f2)
+      CURRENT_IPV4_RANGE_CIDR=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f2 | cut -d"/" -f2)
+      CURRENT_IPV6_RANGE_CIDR=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f2)
       FINAL_IPV4_RANGE=$(echo "${CURRENT_IPV4_RANGE}" | cut -d"/" -f1 | cut -d"." -f1,2)".${NEXT_IPV4_RANGE}.${IPV4_BEFORE_BACKSLASH}/${CURRENT_IPV4_RANGE_CIDR}"
       FINAL_IPV6_RANGE=$(echo "${CURRENT_IPV6_RANGE}" | cut -d"/" -f1 | cut -d":" -f1,2)":${NEXT_IPV6_RANGE}::${IPV6_BEFORE_BACKSLASH}/${CURRENT_IPV6_RANGE_CIDR}"
       if { [ "${THIRD_IPV4_IN_RANGE}" -ge 255 ] && [ "${THIRD_IPV6_IN_RANGE}" -ge 255 ]; }; then
@@ -1554,18 +1554,18 @@ else
     # Choose a random port number for the peer
     PEER_PORT=$(shuf -i 1024-65535 -n 1)
     # Get the private subnet and subnet mask from the WireGuard config file
-    PRIVATE_SUBNET_V4=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f2)
+    PRIVATE_SUBNET_V4=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f2)
     PRIVATE_SUBNET_MASK_V4=$(echo "${PRIVATE_SUBNET_V4}" | cut -d"/" -f2)
-    PRIVATE_SUBNET_V6=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f3)
+    PRIVATE_SUBNET_V6=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f3)
     PRIVATE_SUBNET_MASK_V6=$(echo "${PRIVATE_SUBNET_V6}" | cut -d"/" -f2)
     # Get the server host and public key from the WireGuard config file
-    SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f4)
-    SERVER_PUBKEY=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f5)
+    SERVER_HOST=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f4)
+    SERVER_PUBKEY=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f5)
     # Get the client DNS server, MTU choice, NAT choice, and allowed IP address from the WireGuard config file
-    CLIENT_DNS=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f6)
-    MTU_CHOICE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f7)
-    NAT_CHOICE=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f8)
-    CLIENT_ALLOWED_IP=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f9)
+    CLIENT_DNS=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f6)
+    MTU_CHOICE=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f7)
+    NAT_CHOICE=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f8)
+    CLIENT_ALLOWED_IP=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f9)
     # Calculate the client's IP addresses based on the last IP addresses used
     CLIENT_ADDRESS_V4=$(echo "${PRIVATE_SUBNET_V4}" | cut -d"." -f1-3).$((LASTIPV4 + 1))
     CLIENT_ADDRESS_V6=$(echo "${PRIVATE_SUBNET_V6}" | cut -d":" -f1-4):$((LASTIPV6 + 1))
@@ -1960,15 +1960,15 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       # Change the IP address of your wireguard interface.
       get_network_information
       # Extract the current IP address method from the WireGuard config file
-      CURRENT_IP_METHORD=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f4)
+      CURRENT_IP_METHORD=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f4)
       # If the current IP address method is IPv4, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV4
       if [[ ${CURRENT_IP_METHORD} != *"["* ]]; then
-        OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f4 | cut -d":" -f1)
+        OLD_SERVER_HOST=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f4 | cut -d":" -f1)
         NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV4}
       fi
       # If the current IP address method is IPv6, extract the old server host and set the new server host to DEFAULT_INTERFACE_IPV6
       if [[ ${CURRENT_IP_METHORD} == *"["* ]]; then
-        OLD_SERVER_HOST=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f4 | cut -d"[" -f2 | cut -d"]" -f1)
+        OLD_SERVER_HOST=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f4 | cut -d"[" -f2 | cut -d"]" -f1)
         NEW_SERVER_HOST=${DEFAULT_INTERFACE_IPV6}
       fi
       # If the old server host is different from the new server host, update the server host in the WireGuard config file
@@ -2000,7 +2000,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         exit 1
       fi
       # Extract the current server host for manual update
-      CURRENT_IP_METHOD=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f4)
+      CURRENT_IP_METHOD=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f4)
       if [[ ${CURRENT_IP_METHOD} != *"["* ]]; then
         OLD_SERVER_HOST=$(echo "${CURRENT_IP_METHOD}" | cut -d":" -f1)
       else
@@ -2026,7 +2026,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
   function update_wireguard_interface_port() {
     # Change the wireguard interface's port number.
     # Extract the old server port from the WireGuard config file
-    OLD_SERVER_PORT=$(head --lines=1 ${WIREGUARD_CONFIG} | cut -d" " -f4 | cut -d":" -f2)
+    OLD_SERVER_PORT=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f4 | cut -d":" -f2)
     # Prompt the user to enter a valid custom port (between 1 and 65535) and store it in NEW_SERVER_PORT
     until [[ "${NEW_SERVER_PORT}" =~ ^[0-9]+$ ]] && [ "${NEW_SERVER_PORT}" -ge 1 ] && [ "${NEW_SERVER_PORT}" -le 65535 ]; do
       read -rp "Enter a custom port number (between 1 and 65535): " -e -i 51820 NEW_SERVER_PORT
