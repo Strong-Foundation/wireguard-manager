@@ -95,7 +95,8 @@ function install_resolvconf_or_openresolv() {
       pacman -Su --noconfirm --needed resolvconf
     # For Alpine Linux, install resolvconf.
     elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
-      apk add resolvconf
+      apk update
+      apk add openresolv
     # For FreeBSD, install resolvconf.
     elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
       pkg install resolvconf
@@ -141,7 +142,7 @@ function installing_system_requirements() {
       elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
         # For Alpine Linux, update package lists and install required packages
         apk update
-        apk add curl coreutils jq iproute2 lsof cronie gawk procps grep sed zip unzip openssl nftables e2fsprogs gnupg systemd
+        apk add curl coreutils jq iproute2 lsof cronie gawk procps grep sed zip unzip openssl nftables e2fsprogs gnupg # systemd
       elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
         # For FreeBSD, update package lists and install required packages
         pkg update
@@ -187,36 +188,20 @@ function virt_check() {
 # Call the virt_check function to check for supported virtualization.
 # virt_check
 
-# The following function checks the kernel version.
+# Function to check if the current kernel version is 3.1 or newer
 function kernel_check() {
-  CURRENT_KERNEL_VERSION=$(uname --kernel-release | cut -d"." -f1,2)
-  # Get the current kernel version and extract the major and minor version numbers.
-  CURRENT_KERNEL_MAJOR_VERSION=$(echo "${CURRENT_KERNEL_VERSION}" | cut -d"." -f1)
-  # Extract the major version number from the current kernel version.
-  CURRENT_KERNEL_MINOR_VERSION=$(echo "${CURRENT_KERNEL_VERSION}" | cut -d"." -f2)
-  # Extract the minor version number from the current kernel version.
-  ALLOWED_KERNEL_VERSION="3.1"
-  # Set the minimum allowed kernel version to 3.1.0.
-  ALLOWED_KERNEL_MAJOR_VERSION=$(echo ${ALLOWED_KERNEL_VERSION} | cut -d"." -f1)
-  # Extract the major version number from the allowed kernel version.
-  ALLOWED_KERNEL_MINOR_VERSION=$(echo ${ALLOWED_KERNEL_VERSION} | cut -d"." -f2)
-  # Extract the minor version number from the allowed kernel version.
-  if [ "${CURRENT_KERNEL_MAJOR_VERSION}" -lt "${ALLOWED_KERNEL_MAJOR_VERSION}" ]; then
-    # If the current major version is less than the allowed major version, show an error message and exit.
-    echo "Error: Your current kernel version ${CURRENT_KERNEL_VERSION} is not supported. Please update to version ${ALLOWED_KERNEL_VERSION} or later."
-    exit 1 # Exit the script with an error code.
-  fi
-  if [ "${CURRENT_KERNEL_MAJOR_VERSION}" == "${ALLOWED_KERNEL_MAJOR_VERSION}" ]; then
-    # If the current major version is equal to the allowed major version, check the minor version.
-    if [ "${CURRENT_KERNEL_MINOR_VERSION}" -lt "${ALLOWED_KERNEL_MINOR_VERSION}" ]; then
-      # If the current minor version is less than the allowed minor version, show an error message and exit.
-      echo "Error: Your current kernel version ${CURRENT_KERNEL_VERSION} is not supported. Please update to version ${ALLOWED_KERNEL_VERSION} or later."
-      exit 1 # Exit the script with an error code.
-    fi
+  # Define the minimum allowed kernel version
+  REQUIRED_KERNEL_VERSION="3.1"
+  # Get the current kernel version
+  CURRENT_KERNEL_VERSION=$(uname -r | cut -d"." -f1,2)
+  # Compare the current kernel version with the required version
+  if [ "$(echo -e "${CURRENT_KERNEL_VERSION}\n${REQUIRED_KERNEL_VERSION}" | sort -V | head -n1)" != "${REQUIRED_KERNEL_VERSION}" ]; then
+    echo "Error: Your current kernel version ${CURRENT_KERNEL_VERSION} is not supported. Please update to version ${REQUIRED_KERNEL_VERSION} or later."
+    exit 1
   fi
 }
 
-# Call the kernel_check function to verify the kernel version.
+# Call the kernel_check function to verify the kernel version
 kernel_check
 
 # The following function checks if the current init system is one of the allowed options.
