@@ -14,4 +14,4 @@ COPY wireguard-manager.sh /app/wireguard-manager.sh
 RUN chmod +x /app/wireguard-manager.sh
 
 # Execute the script during build
-RUN /bin/bash /app/wireguard-manager.sh --install
+RUN CURRENT_SYSTEM_VIRTUALIZATION=none /bin/bash wireguard-manager.sh --install
