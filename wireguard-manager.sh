@@ -134,7 +134,7 @@ function installing_system_requirements() {
       elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
         # For Alpine Linux, update package lists and install required packages
         apk update
-        apk add curl coreutils jq iproute2 lsof cronie gawk procps grep sed zip unzip openssl nftables e2fsprogs gnupg
+        apk add curl coreutils jq iproute2 lsof cronie gawk procps grep sed zip unzip openssl nftables e2fsprogs gnupg systemd
       elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
         # For FreeBSD, update package lists and install required packages
         pkg update
