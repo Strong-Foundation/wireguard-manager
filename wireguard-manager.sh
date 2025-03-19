@@ -238,7 +238,7 @@ check_current_init_system
 # The following function checks if there's enough disk space to proceed with the installation.
 function check_disk_space() {
   # This function checks if there is more than 1 GB of free space on the drive.
-  FREE_SPACE_ON_DRIVE_IN_MB=$(df -m / | tr --squeeze-repeats " " | tail -n1 | cut -d" " -f4)
+  FREE_SPACE_ON_DRIVE_IN_MB=$(df -m / | tr -s " " | tail -n1 | cut -d" " -f4)
   # This line calculates the available free space on the root partition in MB.
   if [ "${FREE_SPACE_ON_DRIVE_IN_MB}" -le 1024 ]; then
     # If the available free space is less than or equal to 1024 MB (1 GB), display an error message and exit.
