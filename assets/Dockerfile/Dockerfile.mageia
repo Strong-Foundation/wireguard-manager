@@ -5,7 +5,7 @@ FROM mageia:latest
 WORKDIR /app
 
 # Update package lists and install necessary dependencies
-RUN urpmi.update -a && urpmi bash curl sudo -y
+RUN urpmi.update -a && urpmi --auto --allow-downgrade bash curl sudo -y
 
 # Copy the script into the container
 COPY wireguard-manager.sh /app/wireguard-manager.sh
