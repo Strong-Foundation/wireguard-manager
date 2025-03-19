@@ -178,7 +178,7 @@ function virt_check() {
 }
 
 # Call the virt_check function to check for supported virtualization.
-virt_check
+# virt_check
 
 # The following function checks the kernel version.
 function kernel_check() {
