@@ -100,6 +100,9 @@ function install_resolvconf_or_openresolv() {
     # For FreeBSD, install resolvconf.
     elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
       pkg install resolvconf
+    elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
+      urpmi.update -a
+      yes | urpmi resolvconf
     fi
   fi
 }
@@ -110,7 +113,7 @@ install_resolvconf_or_openresolv
 # Define a function to check system requirements and install missing packages
 function installing_system_requirements() {
   # Check if the current Linux distribution is one of the supported distributions
-  if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ] || [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ] || [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ] || [ "${CURRENT_DISTRO}" == "alpine" ] || [ "${CURRENT_DISTRO}" == "freebsd" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
+  if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ] || [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ] || [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ] || [ "${CURRENT_DISTRO}" == "alpine" ] || [ "${CURRENT_DISTRO}" == "freebsd" ] || [ "${CURRENT_DISTRO}" == "ol" ] || [ "${CURRENT_DISTRO}" == "mageia" ]; }; then
     # If the distribution is supported, check if the required packages are already installed
     if { [ ! -x "$(command -v curl)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v jq)" ] || [ ! -x "$(command -v ip)" ] || [ ! -x "$(command -v lsof)" ] || [ ! -x "$(command -v cron)" ] || [ ! -x "$(command -v awk)" ] || [ ! -x "$(command -v ps)" ] || [ ! -x "$(command -v grep)" ] || [ ! -x "$(command -v qrencode)" ] || [ ! -x "$(command -v sed)" ] || [ ! -x "$(command -v zip)" ] || [ ! -x "$(command -v unzip)" ] || [ ! -x "$(command -v openssl)" ] || [ ! -x "$(command -v nft)" ] || [ ! -x "$(command -v ifup)" ] || [ ! -x "$(command -v chattr)" ] || [ ! -x "$(command -v gpg)" ] || [ ! -x "$(command -v systemd-detect-virt)" ]; }; then
       # If any of the required packages are missing, begin the installation process for the respective distribution
@@ -151,6 +154,9 @@ function installing_system_requirements() {
         # For Oracle Linux (OL), check for updates and install required packages
         yum check-update
         yum install curl coreutils jq iproute lsof cronie gawk procps-ng grep qrencode sed zip unzip openssl nftables NetworkManager e2fsprogs gnupg systemd -y --allowerasing
+      elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
+        urpmi.update -a
+        yes | urpmi curl coreutils jq iproute2 lsof cronie gawk procps grep qrencode sed zip unzip openssl nftables e2fsprogs gnupg systemd # ifupdown
       fi
     fi
   else
@@ -1073,24 +1079,19 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
 
   # Function to verify kernel version and install necessary kernel headers.
   function install_kernel_headers() {
-    # Define the minimum kernel version required and extract its major and minor version numbers.
-    MINIMUM_KERNEL_VERSION="5.6"
-    MINIMUM_KERNEL_MAJOR_VERSION=$(echo ${MINIMUM_KERNEL_VERSION} | cut -d"." -f1)
-    MINIMUM_KERNEL_MINOR_VERSION=$(echo ${MINIMUM_KERNEL_VERSION} | cut -d"." -f2)
-    # Check if the current kernel version is less than or equal to the minimum required version.
-    if [ "${CURRENT_KERNEL_MAJOR_VERSION}" -le "${MINIMUM_KERNEL_MAJOR_VERSION}" ]; then
+    # Define the minimum allowed kernel version
+    REQUIRED_KERNEL_VERSION="5.6"
+    # Get the current kernel version (major.minor)
+    CURRENT_KERNEL_VERSION=$(uname -r | cut -d"." -f1,2)
+    # Compare the current kernel version with the required version
+    if [ "$(echo -e "${CURRENT_KERNEL_VERSION}\n${REQUIRED_KERNEL_VERSION}" | sort -V | head -n1)" != "${REQUIRED_KERNEL_VERSION}" ]; then
+      # If the current kernel version is older than the required, set the flag to true
       INSTALL_LINUX_HEADERS=true
-    fi
-    # If the current kernel major version matches the minimum required major version, compare minor versions.
-    if [ "${CURRENT_KERNEL_MAJOR_VERSION}" == "${MINIMUM_KERNEL_MAJOR_VERSION}" ]; then
-      # If the current minor version is less than the required, set flag to install headers.
-      if [ "${CURRENT_KERNEL_MINOR_VERSION}" -lt "${MINIMUM_KERNEL_MINOR_VERSION}" ]; then
-        INSTALL_LINUX_HEADERS=true
-      fi
-      # If the current minor version is greater than or equal to the required, set flag to not install headers.
-      if [ "${CURRENT_KERNEL_MINOR_VERSION}" -ge "${MINIMUM_KERNEL_MINOR_VERSION}" ]; then
-        INSTALL_LINUX_HEADERS=false
-      fi
+      echo "Your current kernel version ${CURRENT_KERNEL_VERSION} is older than ${REQUIRED_KERNEL_VERSION}. Linux headers will be installed."
+    else
+      # If the current kernel version is equal to or newer than the required, set the flag to false
+      INSTALL_LINUX_HEADERS=false
+      echo "Your current kernel version ${CURRENT_KERNEL_VERSION} is supported. No need to install headers."
     fi
     # If the flag to install headers is set, install appropriate headers based on the Linux distribution.
     if [ "${INSTALL_LINUX_HEADERS}" == true ]; then
@@ -1102,12 +1103,18 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         apt-get install raspberrypi-kernel-headers -y
       elif { [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ]; }; then
         pacman -Su --noconfirm --needed linux-headers
-      elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
+      elif { [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ] || [ "${CURRENT_DISTRO}" == "ol" ]; }; then
         yum check-update
         yum install kernel-headers-"$(uname --kernel-release)" kernel-devel-"$(uname --kernel-release)" -y
-      elif { [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ]; }; then
-        yum check-update
-        yum install kernel-headers-"$(uname --kernel-release)" kernel-devel-"$(uname --kernel-release)" -y
+      elif [ "${CURRENT_DISTRO}" == "alpine" ]; then
+        apk update
+        apk add linux-headers
+      elif [ "${CURRENT_DISTRO}" == "freebsd" ]; then
+        pkg update
+        pkg install linux-kmod-compat
+      elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
+        urpmi.update -a
+        urpmi linux-headers-"$(uname --kernel-release)"
       fi
     fi
   }
@@ -1164,6 +1171,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
         amazon-linux-extras install epel -y
         yum install wireguard-tools -y
+      # For Mageia, update the package list and install WireGuard tools.
+      elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
+        urpmi.update -a
+        urpmi wireguard-tools
       fi
     fi
   }
@@ -1221,6 +1232,9 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         # For Amazon Linux:
         elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
           yum install unbound unbound-host unbound-anchor -y
+        # For Mageia:
+        elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
+          urpmi unbound unbound-host unbound-anchor
         fi
       fi
       # Configure Unbound to use the auto-trust-anchor-file.
@@ -1699,6 +1713,8 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       yum reinstall wireguard-tools -y
     elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
       yum reinstall wireguard-tools -y
+    elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
+      urpmi --replacepkgs wireguard-tools
     fi
     # Enable and start the WireGuard service based on the current init system
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
@@ -1767,6 +1783,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     # For Amazon Linux distribution
     elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
       yum remove wireguard qrencode -y
+    # For Mageia distribution
+    elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
+      urpme wireguard qrencode
     fi
     # Delete WireGuard backup
     if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
@@ -1822,6 +1841,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       # For Amazon Linux distribution
       elif [ "${CURRENT_DISTRO}" == "amzn" ]; then
         yum remove unbound -y
+      # For Mageia distribution
+      elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
+        urpme unbound
       fi
       # Remove Unbound root directory if it exists
       if [ -d "${UNBOUND_ROOT}" ]; then
