@@ -103,6 +103,9 @@ function install_resolvconf_or_openresolv() {
     elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
       urpmi.update -a
       yes | urpmi resolvconf
+    elif [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; then
+      zypper refresh
+      zypper install -y openresolv
     fi
   fi
 }
@@ -113,7 +116,7 @@ install_resolvconf_or_openresolv
 # Define a function to check system requirements and install missing packages
 function installing_system_requirements() {
   # Check if the current Linux distribution is one of the supported distributions
-  if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ] || [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ] || [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ] || [ "${CURRENT_DISTRO}" == "alpine" ] || [ "${CURRENT_DISTRO}" == "freebsd" ] || [ "${CURRENT_DISTRO}" == "ol" ] || [ "${CURRENT_DISTRO}" == "mageia" ]; }; then
+  if { [ "${CURRENT_DISTRO}" == "ubuntu" ] || [ "${CURRENT_DISTRO}" == "debian" ] || [ "${CURRENT_DISTRO}" == "raspbian" ] || [ "${CURRENT_DISTRO}" == "pop" ] || [ "${CURRENT_DISTRO}" == "kali" ] || [ "${CURRENT_DISTRO}" == "linuxmint" ] || [ "${CURRENT_DISTRO}" == "neon" ] || [ "${CURRENT_DISTRO}" == "fedora" ] || [ "${CURRENT_DISTRO}" == "centos" ] || [ "${CURRENT_DISTRO}" == "rhel" ] || [ "${CURRENT_DISTRO}" == "almalinux" ] || [ "${CURRENT_DISTRO}" == "rocky" ] || [ "${CURRENT_DISTRO}" == "amzn" ] || [ "${CURRENT_DISTRO}" == "arch" ] || [ "${CURRENT_DISTRO}" == "archarm" ] || [ "${CURRENT_DISTRO}" == "manjaro" ] || [ "${CURRENT_DISTRO}" == "alpine" ] || [ "${CURRENT_DISTRO}" == "freebsd" ] || [ "${CURRENT_DISTRO}" == "ol" ] || [ "${CURRENT_DISTRO}" == "mageia" ] || [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; }; then
     # If the distribution is supported, check if the required packages are already installed
     if { [ ! -x "$(command -v curl)" ] || [ ! -x "$(command -v cut)" ] || [ ! -x "$(command -v jq)" ] || [ ! -x "$(command -v ip)" ] || [ ! -x "$(command -v lsof)" ] || [ ! -x "$(command -v cron)" ] || [ ! -x "$(command -v awk)" ] || [ ! -x "$(command -v ps)" ] || [ ! -x "$(command -v grep)" ] || [ ! -x "$(command -v qrencode)" ] || [ ! -x "$(command -v sed)" ] || [ ! -x "$(command -v zip)" ] || [ ! -x "$(command -v unzip)" ] || [ ! -x "$(command -v openssl)" ] || [ ! -x "$(command -v nft)" ] || [ ! -x "$(command -v ifup)" ] || [ ! -x "$(command -v chattr)" ] || [ ! -x "$(command -v gpg)" ] || [ ! -x "$(command -v systemd-detect-virt)" ]; }; then
       # If any of the required packages are missing, begin the installation process for the respective distribution
@@ -157,6 +160,9 @@ function installing_system_requirements() {
       elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
         urpmi.update -a
         yes | urpmi curl coreutils jq iproute2 lsof cronie gawk procps grep qrencode sed zip unzip openssl nftables e2fsprogs gnupg systemd # ifupdown
+      elif [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; then
+        zypper refresh
+        zypper install -y curl coreutils jq iproute2 lsof cron gawk procps grep qrencode sed zip unzip openssl nftables e2fsprogs gnupg systemd
       fi
     fi
   else
@@ -1115,6 +1121,9 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
         urpmi.update -a
         urpmi linux-headers-"$(uname --kernel-release)"
+      elif [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; then
+        zypper refresh
+        zypper install kernel-devel-"$(uname --kernel-release)"
       fi
     fi
   }
@@ -1175,6 +1184,10 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
         urpmi.update -a
         urpmi wireguard-tools
+      # For openSUSE Tumbleweed, update the package list and install WireGuard tools.
+      elif [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; then
+        zypper refresh
+        zypper install -y wireguard-tools
       fi
     fi
   }
@@ -1235,6 +1248,9 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         # For Mageia:
         elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
           urpmi unbound unbound-host unbound-anchor
+        # For openSUSE Tumbleweed:
+        elif [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; then
+          zypper install -y unbound # unbound-host unbound-anchor
         fi
       fi
       # Configure Unbound to use the auto-trust-anchor-file.
@@ -1715,6 +1731,8 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       yum reinstall wireguard-tools -y
     elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
       urpmi --replacepkgs wireguard-tools
+    elif [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; then
+      zypper install --force wireguard-tools
     fi
     # Enable and start the WireGuard service based on the current init system
     if [[ "${CURRENT_INIT_SYSTEM}" == *"systemd"* ]]; then
@@ -1786,6 +1804,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     # For Mageia distribution
     elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
       urpme wireguard qrencode
+    # For openSUSE Tumbleweed distribution
+    elif [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; then
+      zypper remove wireguard-tools qrencode
     fi
     # Delete WireGuard backup
     if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
@@ -1844,6 +1865,9 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       # For Mageia distribution
       elif [ "${CURRENT_DISTRO}" == "mageia" ]; then
         urpme unbound
+      # For openSUSE Tumbleweed distribution
+      elif [ "${CURRENT_DISTRO}" == "opensuse-tumbleweed" ]; then
+        zypper remove unbound
       fi
       # Remove Unbound root directory if it exists
       if [ -d "${UNBOUND_ROOT}" ]; then
