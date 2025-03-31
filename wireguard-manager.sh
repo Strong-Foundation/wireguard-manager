@@ -2129,23 +2129,43 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
 
   # Function to generate a QR code for the WireGuard configuration
   function generate_wireguard_qr_code() {
-    # Generate a QR code for a WireGuard peer.
-    # Print a prompt asking the user to choose a WireGuard peer for generating a QR code
-    echo "Which WireGuard peer would you like to generate a QR code for?"
-    # Extract and display a list of peer names from the WireGuard config file
-    grep start ${WIREGUARD_CONFIG} | cut -d" " -f2
-    # Prompt the user to enter the desired peer's name and store it in the VIEW_CLIENT_INFO variable
-    read -rp "Enter the name of the peer you want to view information for: " VIEW_CLIENT_INFO
-    # Check if the config file for the specified peer exists
-    if [ -f "${WIREGUARD_CLIENT_PATH}/${VIEW_CLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf" ]; then
-      # Generate a QR code for the specified peer's config file and display it in the terminal
-      qrencode -t ansiutf8 <${WIREGUARD_CLIENT_PATH}/"${VIEW_CLIENT_INFO}"-${WIREGUARD_PUB_NIC}.conf
-      # Print the file path of the specified peer's config file
-      echo "Peer's config --> ${WIREGUARD_CLIENT_PATH}/${VIEW_CLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf"
+    # Check if the VIEWCLIENT_INFO variable is empty (i.e., no peer selected)
+    if [ -z "${VIEWCLIENT_INFO}" ]; then
+      # Prompt the user to choose a WireGuard peer to generate a QR code for
+      echo "Please select a WireGuard peer to generate a QR code for."
+      # List all the peer names (after the 'start' comment) from the WireGuard configuration file
+      PEERS=$(grep start "${WIREGUARD_CONFIG}" | cut -d" " -f2)
+      # Check if no peers are found in the configuration file
+      if [ -z "${PEERS}" ]; then
+        echo "Error: No WireGuard peers found in the configuration file."
+        exit 1 # Exit the script if no peers are found
+      fi
+      # Set a custom prompt message for the 'select' command to make it more user-friendly
+      PS3="Select a peer (enter the corresponding number): "
+      # Allow the user to select a peer from the list of peers
+      select PEER in ${PEERS}; do
+        # If the selected peer is valid (not empty)
+        if [ -n "${PEER}" ]; then
+          VIEWCLIENT_INFO="${PEER}" # Assign the selected peer to the VIEWCLIENT_INFO variable
+          break                     # Exit the 'select' loop after a valid selection
+        else
+          # If the selection is invalid, display an error message and prompt again
+          echo "Invalid selection. Please choose a valid number between 1 and $(echo "${PEERS}" | wc -w)."
+        fi
+      done
+    fi
+    # Check if the configuration file for the selected peer exists
+    if [ -f "${WIREGUARD_CLIENT_PATH}/${VIEWCLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf" ]; then
+      # If the config file exists, generate and display a QR code for the peer's configuration file in the terminal
+      qrencode -t ansiutf8 <"${WIREGUARD_CLIENT_PATH}/${VIEWCLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf"
+      # Provide feedback with the path to the configuration file of the selected peer
+      echo "QR code generated for the peer's configuration."
+      echo "Peer's configuration file path: ${WIREGUARD_CLIENT_PATH}/${VIEWCLIENT_INFO}-${WIREGUARD_PUB_NIC}.conf"
     else
-      # If the config file for the specified peer does not exist, print an error message
-      echo "Error: The peer you specified could not be found. Please ensure you've entered the correct information."
-      exit
+      # If the config file for the specified peer doesn't exist, display an error message
+      echo "Error: The configuration file for peer '${VIEWCLIENT_INFO}' could not be found."
+      echo "Please ensure you've entered the correct peer name or the configuration exists."
+      exit 1 # Exit the script if the file doesn't exist
     fi
   }
 
