@@ -64,6 +64,12 @@ function system_information() {
     # Extract the major version of the system by splitting the version string at the dot (.) and keeping the first field
     # For example, for '20.04', it will set CURRENT_DISTRO_MAJOR_VERSION to '20'
     CURRENT_DISTRO_MAJOR_VERSION=$(echo "${CURRENT_DISTRO_VERSION}" | cut -d"." -f1)
+    # Set the CURRENT_SYSTEM_ARCHITECTURE variable to the system's architecture (e.g., 'x86_64', 'arm64')
+    CURRENT_SYSTEM_ARCHITECTURE=$(uname -m)
+  else
+    # If the /etc/os-release file is not present, show an error message and exit
+    echo "Error: /etc/os-release file not found. Unable to gather system information."
+    exit 1 # Exit the script with a non-zero status to indicate an error
   fi
 }
 
