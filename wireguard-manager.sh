@@ -39,7 +39,7 @@
 # Define a function to check if the script is being run with root privileges
 function check_root() {
   # Compare the user ID of the current user to 0, which is the ID for root
-  if [ "$(id -u)" -ne 0 ]; then
+  if [ "$(id -u)" != "0" ]; then
     # If the user ID is not 0 (i.e., not root), print an error message
     echo "Error: This script must be run as root."
     # Exit the script with a status code of 1, indicating an error
