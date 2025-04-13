@@ -481,7 +481,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     echo "  2) Custom (Advanced)"
     # Keep prompting the user until they enter a valid subnet choice
     until [[ "${PRIVATE_SUBNET_V4_SETTINGS}" =~ ^[1-2]$ ]]; do
-      read -rp "Subnet Choice [1-2]:" -e -i 1 PRIVATE_SUBNET_V4_SETTINGS
+      read -rp "Please choose a subnet [1-2]: " -e -i 1 PRIVATE_SUBNET_V4_SETTINGS
     done
     # Based on the user's choice, set the private IPv4 subnet
     case ${PRIVATE_SUBNET_V4_SETTINGS} in
@@ -489,8 +489,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       PRIVATE_SUBNET_V4="10.32.0.0/12" # Set a default IPv4 subnet
       ;;
     2)
-      read -rp "Custom IPv4 Subnet:" PRIVATE_SUBNET_V4 # Prompt user for custom subnet
-      if [ -z "${PRIVATE_SUBNET_V4}" ]; then           # If the user did not enter a subnet, set default
+      read -rp "Enter a custom IPv4 subnet: " PRIVATE_SUBNET_V4 # Prompt user for a custom subnet
+      if [ -z "${PRIVATE_SUBNET_V4}" ]; then                    # If the user did not enter a subnet, set default
         PRIVATE_SUBNET_V4="10.32.0.0/12"
       fi
       ;;
@@ -508,7 +508,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     echo "  2) Custom (Advanced)"
     # Use a loop to ensure the user inputs a valid option
     until [[ "${PRIVATE_SUBNET_V6_SETTINGS}" =~ ^[1-2]$ ]]; do
-      read -rp "Please choose the IPv6 subnet for your WireGuard interface [Option 1-2]: " -e -i 1 PRIVATE_SUBNET_V6_SETTINGS
+      read -rp "Select an IPv6 subnet [1-2]: " -e -i 1 PRIVATE_SUBNET_V6_SETTINGS
     done
     # Use a case statement to set the IPv6 subnet based on the user's choice
     case ${PRIVATE_SUBNET_V6_SETTINGS} in
@@ -518,7 +518,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       ;;
     2)
       # Ask the user for a custom IPv6 subnet if they choose option 2
-      read -rp "Please enter a custom IPv6 subnet for your WireGuard interface: " PRIVATE_SUBNET_V6
+      read -rp "Enter a custom IPv6 subnet for your WireGuard interface: " PRIVATE_SUBNET_V6
       # If the user does not input a subnet, use the recommended one
       if [ -z "${PRIVATE_SUBNET_V6}" ]; then
         PRIVATE_SUBNET_V6="fd32:00:00::0/12"
@@ -550,7 +550,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     echo "  2) Custom (Advanced)"
     # Loop until the user provides a valid input
     until [[ "${SERVER_HOST_V4_SETTINGS}" =~ ^[1-2]$ ]]; do
-      read -rp "IPv4 Choice [1-2]:" -e -i 1 SERVER_HOST_V4_SETTINGS
+      read -rp "Select an IPv4 option [1-2]: " -e -i 1 SERVER_HOST_V4_SETTINGS
     done
     # Choose the method for detecting the IPv4 address based on the user's input
     case ${SERVER_HOST_V4_SETTINGS} in
@@ -559,7 +559,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       ;;
     2)
       # Prompt the user to enter a custom IPv4 address
-      read -rp "Custom IPv4:" SERVER_HOST_V4
+      read -rp "Enter a custom IPv4 address: " SERVER_HOST_V4
       # If the user doesn't provide an input, use the default IPv4 address
       if [ -z "${SERVER_HOST_V4}" ]; then
         SERVER_HOST_V4=${DEFAULT_INTERFACE_IPV4}
@@ -579,7 +579,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     echo "  2) Custom (Advanced)"
     # Loop until the user provides a valid input
     until [[ "${SERVER_HOST_V6_SETTINGS}" =~ ^[1-2]$ ]]; do
-      read -rp "IPv6 Choice [1-2]:" -e -i 1 SERVER_HOST_V6_SETTINGS
+      read -rp "Select an IPv6 option [1-2]: " -e -i 1 SERVER_HOST_V6_SETTINGS
     done
     # Choose the method for detecting the IPv6 address based on the user's input
     case ${SERVER_HOST_V6_SETTINGS} in
@@ -588,7 +588,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       ;;
     2)
       # Prompt the user to enter a custom IPv6 address
-      read -rp "Custom IPv6:" SERVER_HOST_V6
+      read -rp "Enter a custom IPv6 address: " SERVER_HOST_V6
       # If the user doesn't provide an input, use the default IPv6 address
       if [ -z "${SERVER_HOST_V6}" ]; then
         SERVER_HOST_V6=${DEFAULT_INTERFACE_IPV6}
@@ -608,7 +608,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     echo "  2) Custom Input (Advanced)"
     # Loop until the user provides a valid input (either 1 or 2).
     until [[ "${SERVER_PUB_NIC_SETTINGS}" =~ ^[1-2]$ ]]; do
-      read -rp "NIC Choice [1-2]:" -e -i 1 SERVER_PUB_NIC_SETTINGS
+      read -rp "Select a NIC option [1-2]: " -e -i 1 SERVER_PUB_NIC_SETTINGS
     done
     # Execute a case statement based on the user's choice.
     case ${SERVER_PUB_NIC_SETTINGS} in
@@ -623,11 +623,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       ;;
     2)
       # Prompt the user to manually input the NIC.
-      read -rp "Custom NIC:" SERVER_PUB_NIC
+      read -rp "Enter a custom NIC: " SERVER_PUB_NIC
       # Input validation loop to ensure the name is alphanumeric.
       while [[ ! "$SERVER_PUB_NIC" =~ ^[a-zA-Z0-9]+$ ]]; do
         echo "Error: The NIC name must be alphanumeric."
-        read -rp "Custom NIC:" SERVER_PUB_NIC
+        read -rp "Enter the custom NIC: " SERVER_PUB_NIC
       done
       # If the user doesn't provide an input, use the IP route command to identify the NIC.
       if [ -z "${SERVER_PUB_NIC}" ]; then
@@ -650,7 +650,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Continue prompting the user until a valid option (1 or 2) is selected
     until [[ "${SERVER_PORT_SETTINGS}" =~ ^[1-2]$ ]]; do
       # Ask the user for their port choice, with 1 as the default option
-      read -rp "Port Choice [1-2]:" -e -i 1 SERVER_PORT_SETTINGS
+      read -rp "Select a port option [1-2]: " -e -i 1 SERVER_PORT_SETTINGS
     done
     # Set the SERVER_PORT variable based on the user's choice
     case ${SERVER_PORT_SETTINGS} in
@@ -665,7 +665,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     2)
       # Continue prompting the user until a valid custom port number (between 1 and 65535) is entered
       until [[ "${SERVER_PORT}" =~ ^[0-9]+$ ]] && [ "${SERVER_PORT}" -ge 1 ] && [ "${SERVER_PORT}" -le 65535 ]; do
-        read -rp "Custom port [1-65535]:" SERVER_PORT
+        read -rp "Enter a custom port (1-65535): " SERVER_PORT
       done
       # If no custom port is entered, set the SERVER_PORT variable to the default of 51820
       if [ -z "${SERVER_PORT}" ]; then
@@ -693,7 +693,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Continue prompting the user until a valid option (1 or 2) is selected.
     until [[ "${NAT_CHOICE_SETTINGS}" =~ ^[1-2]$ ]]; do
       # Ask the user for their interval choice, with 1 as the default option.
-      read -rp "Keepalive Choice [1-2]:" -e -i 1 NAT_CHOICE_SETTINGS
+      read -rp "Select a keepalive option [1-2]: " -e -i 1 NAT_CHOICE_SETTINGS
     done
     # Set the NAT_CHOICE variable based on the user's choice.
     case ${NAT_CHOICE_SETTINGS} in
@@ -704,7 +704,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     2)
       # If the user chose the custom option, prompt them to enter a custom interval.
       until [[ "${NAT_CHOICE}" =~ ^[0-9]+$ ]] && [ "${NAT_CHOICE}" -ge 1 ] && [ "${NAT_CHOICE}" -le 300 ]; do
-        read -rp "Custom NAT [1-300]:" NAT_CHOICE
+        read -rp "Enter a custom NAT value (1-300): " NAT_CHOICE
       done
       # If no custom interval is entered, set the NAT_CHOICE variable to the default of 25 seconds.
       if [ -z "${NAT_CHOICE}" ]; then
@@ -726,7 +726,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Continue prompting the user until a valid option (1 or 2) is selected.
     until [[ "${MTU_CHOICE_SETTINGS}" =~ ^[1-2]$ ]]; do
       # Ask the user for their MTU choice, with 1 as the default option.
-      read -rp "MTU Choice [1-2]:" -e -i 1 MTU_CHOICE_SETTINGS
+      read -rp "Select an MTU option [1-2]: " -e -i 1 MTU_CHOICE_SETTINGS
     done
     # Set the MTU variables based on the user's choice.
     case ${MTU_CHOICE_SETTINGS} in
@@ -738,14 +738,14 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     2)
       # If the user chose the custom option, prompt them to enter a custom MTU for Interface and Peer.
       until [[ "${INTERFACE_MTU_CHOICE}" =~ ^[0-9]+$ ]] && [ "${INTERFACE_MTU_CHOICE}" -ge 1 ] && [ "${INTERFACE_MTU_CHOICE}" -le 3000 ]; do
-        read -rp "Custom Interface MTU [1-3000]:" INTERFACE_MTU_CHOICE
+        read -rp "Enter a custom MTU value (1-3000): " INTERFACE_MTU_CHOICE
       done
       # If no custom Interface MTU is entered, set the INTERFACE_MTU_CHOICE variable to the default of 1420.
       if [ -z "${INTERFACE_MTU_CHOICE}" ]; then
         INTERFACE_MTU_CHOICE="1420"
       fi
       until [[ "${PEER_MTU_CHOICE}" =~ ^[0-9]+$ ]] && [ "${PEER_MTU_CHOICE}" -ge 1 ] && [ "${PEER_MTU_CHOICE}" -le 3000 ]; do
-        read -rp "Custom Peer MTU [1-3000]:" PEER_MTU_CHOICE
+        read -rp "Enter a custom peer MTU value (1-3000): " PEER_MTU_CHOICE
       done
       # If no custom Peer MTU is entered, set the PEER_MTU_CHOICE variable to the default of 1280.
       if [ -z "${PEER_MTU_CHOICE}" ]; then
@@ -768,7 +768,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Continue prompting the user until a valid option (1 or 2) is selected.
     until [[ "${SERVER_HOST_SETTINGS}" =~ ^[1-2]$ ]]; do
       # Ask the user for their IP version choice, with 1 as the default option.
-      read -rp "IP Version Choice [1-2]:" -e -i 1 SERVER_HOST_SETTINGS
+      read -rp "Select an IP version option [1-2]: " -e -i 1 SERVER_HOST_SETTINGS
     done
     # Set the SERVER_HOST variable based on the user's choice.
     case ${SERVER_HOST_SETTINGS} in
@@ -806,7 +806,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Continue prompting the user until a valid option (1 or 2) is selected.
     until [[ "${CLIENT_ALLOWED_IP_SETTINGS}" =~ ^[1-2]$ ]]; do
       # Ask the user for their traffic type choice, with 1 as the default option.
-      read -rp "Traffic Type Choice [1-2]:" -e -i 1 CLIENT_ALLOWED_IP_SETTINGS
+      read -rp "Select a traffic type option [1-2]: " -e -i 1 CLIENT_ALLOWED_IP_SETTINGS
     done
     # Set the CLIENT_ALLOWED_IP variable based on the user's choice.
     case ${CLIENT_ALLOWED_IP_SETTINGS} in
@@ -816,7 +816,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       ;;
     2)
       # If the user chose the custom option, prompt them to enter a custom IP range.
-      read -rp "Custom IP Range:" CLIENT_ALLOWED_IP
+      read -rp "Enter a custom IP range: " CLIENT_ALLOWED_IP
       # If no custom IP range is entered, set the CLIENT_ALLOWED_IP variable to allow all traffic.
       if [ -z "${CLIENT_ALLOWED_IP}" ]; then
         CLIENT_ALLOWED_IP="0.0.0.0/0,::/0"
@@ -839,7 +839,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Loop until a valid choice (1 or 2) is made
     until [[ "${AUTOMATIC_UPDATES_SETTINGS}" =~ ^[1-2]$ ]]; do
       # Read user input for automatic updates setting
-      read -rp "Automatic Updates [1-2]:" -e -i 1 AUTOMATIC_UPDATES_SETTINGS
+      read -rp "Select an automatic updates option [1-2]: " -e -i 1 AUTOMATIC_UPDATES_SETTINGS
     done
     # Evaluate user choice for automatic updates
     case ${AUTOMATIC_UPDATES_SETTINGS} in
@@ -878,7 +878,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Loop until a valid choice (1 or 2) is made
     until [[ "${AUTOMATIC_BACKUP_SETTINGS}" =~ ^[1-2]$ ]]; do
       # Read user input for automatic backup setting
-      read -rp "Automatic Backup [1-2]:" -e -i 1 AUTOMATIC_BACKUP_SETTINGS
+      read -rp "Select an automatic backup option [1-2]: " -e -i 1 AUTOMATIC_BACKUP_SETTINGS
     done
     # Evaluate user choice for automatic backup
     case ${AUTOMATIC_BACKUP_SETTINGS} in
@@ -915,7 +915,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     # Continue prompting until the user enters a valid choice (1 or 2).
     until [[ "${DNS_PROVIDER_SETTINGS}" =~ ^[1-2]$ ]]; do
       # Read the user's DNS provider choice and store it in DNS_PROVIDER_SETTINGS.
-      read -rp "DNS provider [1-2]:" -e -i 1 DNS_PROVIDER_SETTINGS
+      read -rp "Select a DNS provider option [1-2]: " -e -i 1 DNS_PROVIDER_SETTINGS
     done
     # Set variables based on the user's DNS provider choice.
     case ${DNS_PROVIDER_SETTINGS} in
@@ -929,7 +929,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       # Continue prompting until the user enters a valid choice (1 or 2).
       until [[ "${CONTENT_BLOCKER_SETTINGS}" =~ ^[1-2]$ ]]; do
         # Read the user's content blocker choice and store it in CONTENT_BLOCKER_SETTINGS.
-        read -rp "Content Blocker Choice [1-2]:" -e -i 1 CONTENT_BLOCKER_SETTINGS
+        read -rp "Select a content blocker option [1-2]: " -e -i 1 CONTENT_BLOCKER_SETTINGS
       done
       # Set INSTALL_BLOCK_LIST based on the user's content blocker choice.
       case ${CONTENT_BLOCKER_SETTINGS} in
@@ -1041,12 +1041,12 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       # Display naming rules to the user.
       echo "Please provide a name for the WireGuard Peer. The name should be a single word, without special characters or spaces."
       # Read the user's input, offering a random string as the default name.
-      read -rp "Client name:" -e -i "$(openssl rand -hex 5)" CLIENT_NAME
+      read -rp "Enter the client name: " -e -i "$(openssl rand -hex 5)" CLIENT_NAME
     fi
     # Input validation loop to ensure the name is alphanumeric.
     while [[ ! "$CLIENT_NAME" =~ ^[a-zA-Z0-9]+$ ]]; do
       echo "Invalid name. The name should contain only letters and numbers (no spaces or special characters)."
-      read -rp "Client name:" -e -i "$(openssl rand -hex 5)" CLIENT_NAME
+      read -rp "Enter the client name (default: $(openssl rand -hex 5)): " -e -i "$(openssl rand -hex 5)" CLIENT_NAME
     done
     # If no name is provided by the user, assign a random string as the name.
     if [ -z "${CLIENT_NAME}" ]; then
@@ -1065,7 +1065,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     echo "  2) Yes, expire after one year"
     # Keep asking until the user enters 1 or 2.
     until [[ "${AUTOMATIC_CONFIG_REMOVER}" =~ ^[1-2]$ ]]; do
-      read -rp "Choose an option for peer expiration [1-2]:" -e -i 1 AUTOMATIC_CONFIG_REMOVER
+      read -rp "Select an option for peer expiration [1-2]: " -e -i 1 AUTOMATIC_CONFIG_REMOVER
     done
     # Execute actions based on the user's choice.
     case ${AUTOMATIC_CONFIG_REMOVER} in
@@ -1476,12 +1476,12 @@ else
     # If a client name isn't supplied, the script will request one
     if [ -z "${NEW_CLIENT_NAME}" ]; then
       echo "Let's name the WireGuard Peer. Use one word only, no special characters, no spaces."
-      read -rp "New client peer:" -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
+      read -rp "Enter the new client peer name: " -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
     fi
     # Input validation loop to ensure the name is alphanumeric.
     while [[ ! "$NEW_CLIENT_NAME" =~ ^[a-zA-Z0-9]+$ ]]; do
       echo "Invalid name. The name should contain only letters and numbers (no spaces or special characters)."
-      read -rp "Client name:" -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
+      read -rp "Enter the client name : " -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
     done
     # If no client name is provided, use openssl to generate a random name
     if [ -z "${NEW_CLIENT_NAME}" ]; then
@@ -1972,7 +1972,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       exit
     fi
     # Prompt the user to enter the backup password and store it in the WIREGUARD_BACKUP_PASSWORD variable
-    read -rp "Backup Password: " -e -i "$(cat "${WIREGUARD_BACKUP_PASSWORD_PATH}")" WIREGUARD_BACKUP_PASSWORD
+    read -rp "Enter the backup password (default: from file): " -e -i "$(cat "${WIREGUARD_BACKUP_PASSWORD_PATH}")" WIREGUARD_BACKUP_PASSWORD
     # If the WIREGUARD_BACKUP_PASSWORD variable is empty, exit the script
     if [ -z "${WIREGUARD_BACKUP_PASSWORD}" ]; then
       echo "Error: The backup password field is empty. Please provide a valid password."
@@ -2037,7 +2037,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
       ;;
     2)
       # Manually specify the IP
-      read -rp "Enter the new server IP address: " NEW_SERVER_HOST
+      read -rp "Enter the new external server IP address : " NEW_SERVER_HOST
       if [ -z "${NEW_SERVER_HOST}" ]; then
         echo "No IP address provided. Aborting."
         exit 1
@@ -2072,7 +2072,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     OLD_SERVER_PORT=$(head -n 1 ${WIREGUARD_CONFIG} | cut -d" " -f4 | cut -d":" -f2)
     # Prompt the user to enter a valid custom port (between 1 and 65535) and store it in NEW_SERVER_PORT
     until [[ "${NEW_SERVER_PORT}" =~ ^[0-9]+$ ]] && [ "${NEW_SERVER_PORT}" -ge 1 ] && [ "${NEW_SERVER_PORT}" -le 65535 ]; do
-      read -rp "Enter a custom port number (between 1 and 65535): " -e -i 51820 NEW_SERVER_PORT
+      read -rp "Enter a custom port number (1-65535, default: 51820): " -e -i 51820 NEW_SERVER_PORT
     done
     # Check if the chosen port is already in use by another application
     if [ "$(lsof -i UDP:"${NEW_SERVER_PORT}")" ]; then
@@ -2227,7 +2227,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
     echo "   15) Generate a QR code for WireGuard configuration"
     echo "   16) Verify WireGuard configurations"
     until [[ "${WIREGUARD_OPTIONS}" =~ ^[0-9]+$ ]] && [ "${WIREGUARD_OPTIONS}" -ge 1 ] && [ "${WIREGUARD_OPTIONS}" -le 16 ]; do
-      read -rp "Select an Option [1-16]:" -e -i 0 WIREGUARD_OPTIONS
+      read -rp "Select an option [1-16, default: 0]: " -e -i 0 WIREGUARD_OPTIONS
     done
     case ${WIREGUARD_OPTIONS} in
     1)
