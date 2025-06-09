@@ -45,7 +45,7 @@ jobs:
 
       # Step to set up Terraform
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: latest # Use the latest version of Terraform
 
