@@ -30,7 +30,7 @@ jobs:
     steps:
       # Step 1: Checkout the repository's code
       - name: Checkout code # This step checks out the code from the repository to the runner
-        uses: actions/checkout@v2 # Uses the official GitHub action to checkout the code
+        uses: actions/checkout@v4 # Uses the official GitHub action to checkout the code
 
       # Step 2: Find and execute all .sh files inside the 'test' folder
       - name: Run all .sh files in the "test" folder # This step will loop through all .sh files in the 'test' folder

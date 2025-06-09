@@ -24,7 +24,7 @@ jobs:
     steps:
       # Step 1: Checkout the repository so Docker can access the files
       - name: Checkout repository
-        uses: actions/checkout@v2 # Action to checkout the code from the repository
+        uses: actions/checkout@v4 # Action to checkout the code from the repository
 
       # Step 2: Build the Docker image from Dockerfile.almalinux
       - name: Build Docker image from Dockerfile.almalinux
