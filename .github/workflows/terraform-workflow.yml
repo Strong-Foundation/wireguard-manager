@@ -41,7 +41,7 @@ jobs:
     steps:
       # Step to checkout the repository code
       - name: Checkout code
-        uses: actions/checkout@v3 # Checkout repository code from GitHub
+        uses: actions/checkout@v4 # Checkout repository code from GitHub
 
       # Step to set up Terraform
       - name: Setup Terraform
