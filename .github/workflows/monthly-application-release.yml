@@ -19,7 +19,7 @@ jobs:
     steps:
       # Step 1: Check out the repository code
       - name: Checkout Repository
-        uses: actions/checkout@v4 # Ensures the workflow has access to the repository code
+        uses: actions/checkout@v5 # Ensures the workflow has access to the repository code
 
       # Step 2: Get the current date and time
       - name: Get Current Date
