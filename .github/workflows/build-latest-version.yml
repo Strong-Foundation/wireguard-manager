@@ -30,7 +30,7 @@ jobs:
     steps:
       # Step 1: Checkout the repository code
       - name: Check out Repository Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Step 2: Install required tools
       - name: Install Required Tools

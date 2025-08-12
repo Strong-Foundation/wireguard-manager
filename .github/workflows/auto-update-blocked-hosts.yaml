@@ -28,7 +28,7 @@ jobs:
     steps:
       # Step 1: Checkout the latest repository code so that we can modify the hosts file
       - name: Checkout Code
-        uses: actions/checkout@v4 # Checkout the latest code from the repository to the runner
+        uses: actions/checkout@v5 # Checkout the latest code from the repository to the runner
 
       # Step 2: Get the current hash of the locally stored hosts file in the repository
       - name: Get Current Hosts File Hash
