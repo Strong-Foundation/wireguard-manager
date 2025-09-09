@@ -1032,24 +1032,26 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   # Invoke the custom_dns function to allow the user to select a DNS provider.
   custom_dns
 
-  # Function to prompt for the name of the first WireGuard peer.
+  # Function to prompt for the name of the first WireGuard peer
   function client_name() {
-    # If CLIENT_NAME variable is not set, prompt the user for input.
-    if [ -z "${CLIENT_NAME}" ]; then
-      # Display naming rules to the user.
-      echo "Please provide a name for the WireGuard Peer. The name should be a single word, without special characters or spaces."
-      # Read the user's input, offering a random string as the default name.
-      read -rp "Enter the client name: " -e -i "$(openssl rand -hex 5)" CLIENT_NAME
-    fi
-    # Input validation loop to ensure the name is alphanumeric.
-    while [[ ! "$CLIENT_NAME" =~ ^[a-zA-Z0-9]+$ ]]; do
-      echo "Invalid name. The name should contain only letters and numbers (no spaces or special characters)."
-      read -rp "Enter the client name (default: $(openssl rand -hex 5)): " -e -i "$(openssl rand -hex 5)" CLIENT_NAME
+    # Generate a default random name
+    DEFAULT_NAME=$(openssl rand -hex 5)
+    # Prompt and validate in a loop
+    while true; do
+      if [[ -t 0 ]]; then
+        echo "Please provide a name for the WireGuard Peer (letters/numbers only, no spaces)."
+        read -rp "Enter the client name [${DEFAULT_NAME}]: " CLIENT_NAME
+      fi
+      # Always use default if input is empty
+      CLIENT_NAME=${CLIENT_NAME:-$DEFAULT_NAME}
+      # Validate: only letters and numbers
+      if [[ "$CLIENT_NAME" =~ ^[a-zA-Z0-9]+$ ]]; then
+        break
+      else
+        echo "Invalid name! Only letters and numbers are allowed."
+        CLIENT_NAME=""
+      fi
     done
-    # If no name is provided by the user, assign a random string as the name.
-    if [ -z "${CLIENT_NAME}" ]; then
-      CLIENT_NAME="$(openssl rand -hex 5)"
-    fi
   }
 
   # Invoke the function to prompt for the first WireGuard peer's name.
@@ -1471,20 +1473,24 @@ else
   # Function to ad a new user to wireguard
   function add_wireguard_peer() {
     # Adding a new peer to WireGuard
-    # If a client name isn't supplied, the script will request one
-    if [ -z "${NEW_CLIENT_NAME}" ]; then
-      echo "Let's name the WireGuard Peer. Use one word only, no special characters, no spaces."
-      read -rp "Enter the new client peer name: " -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
-    fi
-    # Input validation loop to ensure the name is alphanumeric.
-    while [[ ! "$NEW_CLIENT_NAME" =~ ^[a-zA-Z0-9]+$ ]]; do
-      echo "Invalid name. The name should contain only letters and numbers (no spaces or special characters)."
-      read -rp "Enter the client name : " -e -i "$(openssl rand -hex 5)" NEW_CLIENT_NAME
+    # Generate a default random name
+    NEW_DEFAULT_NAME=$(openssl rand -hex 5)
+    # Prompt and validate in a loop
+    while true; do
+      if [[ -t 0 ]]; then
+        echo "Please provide a name for the WireGuard Peer (letters/numbers only, no spaces)."
+        read -rp "Enter the client name [${NEW_DEFAULT_NAME}]: " NEW_CLIENT_NAME
+      fi
+      # Always use default if input is empty
+      NEW_CLIENT_NAME=${NEW_CLIENT_NAME:-$NEW_DEFAULT_NAME}
+      # Validate: only letters and numbers
+      if [[ "$NEW_CLIENT_NAME" =~ ^[a-zA-Z0-9]+$ ]]; then
+        break
+      else
+        echo "Invalid name! Only letters and numbers are allowed."
+        NEW_CLIENT_NAME=""
+      fi
     done
-    # If no client name is provided, use openssl to generate a random name
-    if [ -z "${NEW_CLIENT_NAME}" ]; then
-      NEW_CLIENT_NAME="$(openssl rand -hex 5)"
-    fi
     # Extract the last IPv4 address used in the WireGuard configuration file
     LASTIPV4=$(grep "AllowedIPs" ${WIREGUARD_CONFIG} | cut -d" " -f3 | cut -d"/" -f1 | cut -d"." -f4 | tail --lines=1)
     # Extract the last IPv6 address used in the WireGuard configuration file
