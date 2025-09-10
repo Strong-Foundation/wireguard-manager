@@ -1273,11 +1273,11 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
 \troot-hints: ${UNBOUND_ROOT_HINTS}
 \tauto-trust-anchor-file: ${UNBOUND_ANCHOR}
 \tinterface: 0.0.0.0
-\tinterface: ::0
+\tinterface: ::
 \tport: 53
 \tmax-udp-size: 3072
 \taccess-control: 0.0.0.0/0\trefuse
-\taccess-control: ::0\trefuse
+\taccess-control: ::/0\trefuse
 \taccess-control: ${PRIVATE_SUBNET_V4}\tallow
 \taccess-control: ${PRIVATE_SUBNET_V6}\tallow
 \taccess-control: 127.0.0.1\tallow
