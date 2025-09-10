@@ -502,7 +502,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   function set_ipv6_subnet() {
     # Ask the user which IPv6 subnet they want to use
     echo "Please specify the IPv6 subnet you want to use for the WireGuard interface. This should be a private subnet that is not in use elsewhere on your network."
-    echo "  1) fd32:00:00::0/12 (Recommended)"
+    echo "  1) fd32:00:00::0/64 (Recommended)"
     echo "  2) Custom (Advanced)"
     # Use a loop to ensure the user inputs a valid option
     until [[ "${PRIVATE_SUBNET_V6_SETTINGS}" =~ ^[1-2]$ ]]; do
@@ -512,14 +512,14 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     case ${PRIVATE_SUBNET_V6_SETTINGS} in
     1)
       # Use the recommended IPv6 subnet if the user chooses option 1
-      PRIVATE_SUBNET_V6="fd32:00:00::0/12"
+      PRIVATE_SUBNET_V6="fd32:00:00::0/64"
       ;;
     2)
       # Ask the user for a custom IPv6 subnet if they choose option 2
       read -rp "Enter a custom IPv6 subnet for your WireGuard interface: " PRIVATE_SUBNET_V6
       # If the user does not input a subnet, use the recommended one
       if [ -z "${PRIVATE_SUBNET_V6}" ]; then
-        PRIVATE_SUBNET_V6="fd32:00:00::0/12"
+        PRIVATE_SUBNET_V6="fd32:00:00::0/64"
       fi
       ;;
     esac
