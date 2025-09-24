@@ -120,6 +120,40 @@ nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFA
 # Example: allows VPN clients to browse Internet through server NAT
 
 # ---------------------
+# Filter rules
+# ---------------------
+nft add table inet "${WIREGUARD_TABLE_NAME}"
+
+nft add chain inet "${WIREGUARD_TABLE_NAME}" forward '{ type filter hook forward priority filter; policy drop; }'
+# Default drop
+
+# 1) Drop invalid packets from wg0 only
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" ct state invalid drop
+
+# 2) Allow established/related connections
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward ct state related,established accept
+
+# 3) Allow WireGuard server UDP port (only service on internal net)
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" ip daddr "${WIREGUARD_HOST_IPV4}" udp dport ${WIREGUARD_VPN_PORT} accept
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" ip6 daddr "${WIREGUARD_HOST_IPV6}" udp dport ${WIREGUARD_VPN_PORT} accept
+
+# 4) Block ALL other traffic to server internal IPs from VPN clients
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" ip daddr "${WIREGUARD_HOST_IPV4}" drop
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" ip6 daddr "${WIREGUARD_HOST_IPV6}" drop
+
+# 5) Block VPN client → VPN client communication
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward ip saddr ${WIREGUARD_IPv4_SUBNET} ip daddr ${WIREGUARD_IPv4_SUBNET} drop
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward ip6 saddr ${WIREGUARD_IPv6_SUBNET} ip6 daddr ${WIREGUARD_IPv6_SUBNET} drop
+
+# 6) Block VPN clients → Private LANs (so they cannot reach *any* local/internal services)
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" ip daddr "{ ${PRIVATE_LOCAL_IPV4_SUBNET} }" drop
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" ip6 daddr "{ ${PRIVATE_LOCAL_IPV6_SUBNET} }" drop
+
+# 7) Allow VPN clients → Internet (everything outside local/private ranges)
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" oifname "${NETWORK_INTERFACE}" ip saddr ${WIREGUARD_IPv4_SUBNET} accept
+nft add rule inet "${WIREGUARD_TABLE_NAME}" forward iifname "${WIREGUARD_INTERFACE}" oifname "${NETWORK_INTERFACE}" ip6 saddr ${WIREGUARD_IPv6_SUBNET} accept
+
+# ---------------------
 # Show final rules
 # ---------------------
 nft list ruleset
