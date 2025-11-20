@@ -52,7 +52,7 @@ jobs:
       # Step 1: Checkout repository code from the repository so that subsequent steps can use it
       - name: Checkout repository
         # Uses the GitHub Actions official checkout action to clone the repository to the runner
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       # Step 2: Set up GitHub Pages to ensure the repository is properly configured for Pages deployment
       - name: Set up GitHub Pages
